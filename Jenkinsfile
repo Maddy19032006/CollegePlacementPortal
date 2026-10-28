@@ -71,26 +71,32 @@ pipeline {
         // ── Stage 5 ─────────────────────────────────────────────────────────────
         stage('Docker Build Image') {
             steps {
-                bat "docker build -t %IMAGE_NAME%:latest -t %IMAGE_NAME%:%BUILD_NUMBER% ."
-                echo "Docker image built: ${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
+                bat "docker build -t %IMAGE_NAME%:latest -t %IMAGE_NAME%:%BUILD_NUMBER% -t placement-portal:local ."
+                echo "Docker image built: ${env.IMAGE_NAME}:${env.BUILD_NUMBER} and tagged as placement-portal:local"
             }
         }
 
         // ── Stage 6 ─────────────────────────────────────────────────────────────
         stage('Docker Push to Hub') {
             steps {
-                bat "echo %DOCKER_HUB_CREDS_PSW% | docker login -u %DOCKER_HUB_CREDS_USR% --password-stdin"
-                bat "docker push %IMAGE_NAME%:latest"
-                bat "docker push %IMAGE_NAME%:%BUILD_NUMBER%"
-                echo "Image pushed to Docker Hub: https://hub.docker.com/r/${env.IMAGE_NAME}"
+                script {
+                    try {
+                        bat 'echo %DOCKER_HUB_CREDS_PSW%| docker login -u %DOCKER_HUB_CREDS_USR% --password-stdin'
+                        bat 'docker push %IMAGE_NAME%:latest'
+                        bat 'docker push %IMAGE_NAME%:%BUILD_NUMBER%'
+                        echo "Image successfully pushed to Docker Hub: https://hub.docker.com/r/${env.IMAGE_NAME}"
+                    } catch (Exception e) {
+                        echo "Docker Hub push warning: ${e.getMessage()}. Continuing with local deployment."
+                    }
+                }
             }
         }
 
         // ── Stage 7 ─────────────────────────────────────────────────────────────
         stage('Deploy with Docker Compose') {
             steps {
-                bat "set APP_IMAGE=%IMAGE_NAME%:%BUILD_NUMBER% && docker compose -f docker-compose.yml up -d --pull always --no-build"
-                echo 'Containers restarted with new image.'
+                bat "docker compose -f docker-compose.yml up -d"
+                echo 'Containers deployed and running with latest image.'
             }
         }
 
@@ -98,10 +104,10 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 bat '''
-                    echo Waiting for application to become healthy...
+                    echo Waiting for application to respond on port 8081...
                     for /L %%i in (1,1,30) do (
                         curl -sf -o NUL -w "%%{http_code}" http://localhost:8081/login.html | findstr /C:"200" && (
-                            echo App is UP and responding.
+                            echo App is UP and responding with HTTP 200 OK!
                             exit /b 0
                         )
                         timeout /t 3 /nobreak >NUL
