@@ -1,0 +1,28 @@
+Issue Type,Summary,Description,Priority,Story Points,Sprint,Acceptance Criteria
+Epic,Foundation and Authentication,Core skeleton and Spring Security,High,,Sprint 1,Users can register and login securely
+Epic,Student Profile and Readiness Score,Profile and readiness calculations,High,,Sprint 2,Score computed across 5 weighted domains
+Epic,Company Management and Eligibility,Recruiter management and eligibility checking,High,,Sprint 3,Automated evaluation of students against company criteria
+Epic,Application Lifecycle and Tracking,State machine tracking from applied to selected,High,,Sprint 4,Strict status flow enforcement
+Epic,Quality and DevOps CI/CD,Docker Jenkins SonarQube and K8s,High,,Sprint 5,Automated build test and deployment
+Story,US-001 Project foundation and database schema,Spring Boot Maven MySQL skeleton,High,3,Sprint 1,Entities map with constraints and app boots
+Story,US-002 User registration with validation,Registration with BCrypt hashing,High,5,Sprint 1,Password strength rules enforced
+Story,US-003 Login and role based access control,Role based authorization for Student and Officer,High,5,Sprint 1,403 returned on unauthorized endpoints
+Story,US-004 Demo data seeding,Automatic demo accounts seeding on empty DB,Medium,3,Sprint 1,Demo users created automatically
+Story,US-005 Student profile creation and edit,Manage academic profile CGPA and graduation year,High,5,Sprint 2,CGPA validated 0 to 10
+Story,US-006 Skills catalog and student skills,Skills mapping to student profiles,High,3,Sprint 2,Skills stored without duplicates
+Story,US-007 Preparation scores entry,Enter 5 scores aptitude coding technical projects comm,High,3,Sprint 2,Scores validated 0 to 100
+Story,US-008 Placement readiness score engine,Compute weighted score 0 to 100,High,5,Sprint 2,Coding 30pct Aptitude 20pct etc
+Story,US-009 Placement officer company management,Officer creates and edits companies,High,5,Sprint 3,Minimum CGPA and deadline stored
+Story,US-010 Company search and filtering,Search companies by name department,High,3,Sprint 3,Filtered companies returned
+Story,US-011 Company details and eligibility rules,View detailed requirements and packages,High,3,Sprint 3,Criteria shown clearly
+Story,US-012 Automated eligibility evaluation engine,Check student profile against company criteria,High,5,Sprint 3,Explicit pass fail reasons returned
+Story,US-013 Student job application submission,Eligible student applies for drive,High,5,Sprint 4,Application created in APPLIED status
+Story,US-014 Duplicate and deadline prevention,Block repeat applications and late submissions,High,3,Sprint 4,BusinessException thrown
+Story,US-015 Student application tracking,View application history and current badge,High,3,Sprint 4,Badges reflect current stage
+Story,US-016 Officer application status transition,Transition application through verified stages,High,5,Sprint 4,Valid transition rules strictly followed
+Story,US-017 Student dashboard,Personal dashboard with recommendations,High,5,Sprint 4,Jobs ranked by skill and package
+Story,US-018 Officer and Admin dashboards,Aggregated metrics and placement statistics,Medium,3,Sprint 4,Reports and statistics displayed
+Story,US-020 Automated test suite,JUnit 5 and Mockito tests,High,8,Sprint 5,All 41 tests pass in CI
+Story,US-021 Docker containerization,Multi stage Docker and Docker Compose,High,5,Sprint 5,App and MySQL healthy in containers
+Story,US-022 Jenkins automated CI CD pipeline,Jenkinsfile with 8 stages,High,8,Sprint 5,Pipeline runs clean verify package
+Story,US-023 SonarQube and JaCoCo code quality,Code coverage and static quality analysis,Medium,3,Sprint 5,JaCoCo generates HTML report

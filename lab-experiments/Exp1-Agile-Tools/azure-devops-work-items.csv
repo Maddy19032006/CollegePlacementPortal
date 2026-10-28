@@ -1,0 +1,28 @@
+ID,Work Item Type,Title,Priority,Story Points,Iteration Path,Description,Acceptance Criteria
+,Epic,Foundation and Authentication,1,,CollegePlacementPortal\Sprint 1,Core application skeleton and security framework,All users can register and login securely
+,Epic,Student Profile and Readiness Score,1,,CollegePlacementPortal\Sprint 2,Student profile management and weighted readiness calculation,Readiness score displays 0-100 breakdown
+,Epic,Company Management and Eligibility Engine,1,,CollegePlacementPortal\Sprint 3,Recruiter management and automated eligibility checking,Students are evaluated against company requirements
+,Epic,Application Lifecycle and Dashboards,1,,CollegePlacementPortal\Sprint 4,Apply and status state machine with student and officer dashboards,Full application flow from applied to selected
+,Epic,Quality and DevOps Pipeline,1,,CollegePlacementPortal\Sprint 5,Automated testing containerization and CI/CD pipelines,Clean build tests and container deployment
+,User Story,US-001 Project foundation and database schema,1,3,CollegePlacementPortal\Sprint 1,Spring Boot skeleton with MySQL and JPA entity models,mvn compile succeeds with entity mappings
+,User Story,US-002 User registration with validation,1,5,CollegePlacementPortal\Sprint 1,Registration with BCrypt password hashing and validation rules,Passwords require uppercase lowercase digit and special char
+,User Story,US-003 Login and role based access control,1,5,CollegePlacementPortal\Sprint 1,Session based authentication with STUDENT OFFICER and ADMIN roles,403 Forbidden returned when students access officer endpoints
+,User Story,US-004 Demo data seeding,2,3,CollegePlacementPortal\Sprint 1,Automatic seeding of sample students companies and applications,Database seeded on first startup
+,User Story,US-005 Student profile creation and edit,1,5,CollegePlacementPortal\Sprint 2,Manage student academic details CGPA department and graduation year,CGPA validated between 0 and 10
+,User Story,US-006 Skills catalog and student skills,1,3,CollegePlacementPortal\Sprint 2,Categorized skills selection for students,Skills linked to student profiles without duplicates
+,User Story,US-007 Preparation scores entry,1,3,CollegePlacementPortal\Sprint 2,Enter scores across Aptitude Coding Technical Projects and Communication,Each score validated between 0 and 100
+,User Story,US-008 Placement readiness score engine,1,5,CollegePlacementPortal\Sprint 2,Calculates objective readiness score using documented weights,Readiness score equals Aptitude 20pct Coding 30pct Technical 20pct Projects 20pct Communication 10pct
+,User Story,US-009 Placement officer company management,1,5,CollegePlacementPortal\Sprint 3,Officers create edit and delete company placement drives,Companies store minimum CGPA department and deadline
+,User Story,US-010 Company search and filtering,1,3,CollegePlacementPortal\Sprint 3,Students search companies by name department or job role,Filtering returns matched companies
+,User Story,US-011 Company details and eligibility criteria,1,3,CollegePlacementPortal\Sprint 3,Displays detailed job description package and eligibility rules,Rules shown clearly to students
+,User Story,US-012 Automated eligibility evaluation engine,1,5,CollegePlacementPortal\Sprint 3,Evaluates student profile against company requirements,Returns pass or fail with explicit failure reasons
+,User Story,US-013 Student job application submission,1,5,CollegePlacementPortal\Sprint 4,Eligible student applies before deadline,Application created in APPLIED status
+,User Story,US-014 Duplicate and deadline prevention,1,3,CollegePlacementPortal\Sprint 4,Blocks duplicate applications and applications past deadline,Throws BusinessException with clear error message
+,User Story,US-015 Student application tracking,1,3,CollegePlacementPortal\Sprint 4,Student views timeline and status of all submissions,Status badges display current stage
+,User Story,US-016 Officer application status transition,1,5,CollegePlacementPortal\Sprint 4,Officer advances application through verified stage machine,State transitions follow APPLIED to SHORTLISTED to ONLINE_TEST to TECH_INTERVIEW to HR to SELECTED
+,User Story,US-017 Student dashboard,1,5,CollegePlacementPortal\Sprint 4,Dashboard showing readiness gauge and recommended jobs,Recommended jobs ranked by skill match and package
+,User Story,US-018 Officer and Admin dashboards,1,3,CollegePlacementPortal\Sprint 4,Aggregated statistics of applicants and placement rate,Visual summary charts displayed
+,User Story,US-020 Automated JUnit and Mockito test suite,1,8,CollegePlacementPortal\Sprint 5,Comprehensive unit and integration tests,All 41 tests pass with zero errors
+,User Story,US-021 Docker containerization and Docker Compose,1,5,CollegePlacementPortal\Sprint 5,Multi stage Dockerfile and docker compose setup,Both containers healthy and app accessible on 8081
+,User Story,US-022 Jenkins automated CI CD pipeline,1,8,CollegePlacementPortal\Sprint 5,8 stage declarative Jenkins pipeline,Checkout compile test package and smoke test automated
+,User Story,US-023 SonarQube and JaCoCo code quality gate,2,3,CollegePlacementPortal\Sprint 5,Code coverage and static analysis reporting,JaCoCo generates interactive HTML report
