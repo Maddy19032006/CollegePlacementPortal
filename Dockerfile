@@ -10,10 +10,13 @@ RUN mvn -B clean package -DskipTests
 FROM --platform=linux/amd64 eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN addgroup -S spring && adduser -S spring -G spring \
+    && mkdir -p /app/logs \
+    && chown -R spring:spring /app
+
 USER spring
 
-COPY --from=build /app/target/placement-portal*.jar app.jar
+COPY --from=build --chown=spring:spring /app/target/placement-portal*.jar app.jar
 
 EXPOSE 8081
 
