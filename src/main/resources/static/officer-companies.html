@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Companies · Officer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="container">
+    <div id="alert-placeholder"></div>
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div><div class="page-kicker">Placement operations</div><h1 class="page-heading mb-0">Manage job offers</h1></div>
+        <button class="btn btn-primary" onclick="openCompanyModal()">+ Add company</button>
+    </div>
+
+    <div class="card"><div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr>
+                    <th>Company</th><th>Role</th><th>Package</th><th>Min CGPA</th>
+                    <th>Deadline</th><th></th>
+                </tr></thead>
+                <tbody id="companies-body"><tr><td colspan="6" class="text-muted">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div></div>
+</div>
+
+<!-- Add/Edit modal -->
+<div class="modal fade" id="company-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-title">Add company</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="company-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Company name *</label>
+                            <input class="form-control" id="c-name" required maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Job role *</label>
+                            <input class="form-control" id="c-role" required maxlength="100">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Package (LPA)</label>
+                            <input class="form-control" id="c-package" type="number" step="0.1" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Min CGPA (0-10) *</label>
+                            <input class="form-control" id="c-cgpa" type="number" step="0.01" min="0" max="10" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Min graduation year</label>
+                            <input class="form-control" id="c-year" type="number" min="2024" max="2035">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Eligible departments (comma separated, blank = all)</label>
+                            <input class="form-control" id="c-departments" placeholder="CSE, IT">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Required skills (comma separated)</label>
+                            <input class="form-control" id="c-skills" placeholder="Java, SQL">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Application deadline *</label>
+                            <input class="form-control" id="c-deadline" type="date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="c-description" rows="1" maxlength="1000"></textarea>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-3" type="submit">Save company</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+let editingId = null;
+let companyModal;
+
+(async function () {
+    const user = await requireAuth();
+    requireRole(user, 'PLACEMENT_OFFICER', 'ADMIN');
+    document.getElementById('navbar').innerHTML = navbar('officer-companies');
+    companyModal = new bootstrap.Modal(document.getElementById('company-modal'));
+    loadCompanies();
+})();
+
+async function loadCompanies() {
+    try {
+        const companies = await api('/companies');
+        document.getElementById('companies-body').innerHTML = companies.map(c => `
+            <tr>
+                <td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.jobRole)}</td><td>${escapeHtml(c.packageCtc ?? '-')} LPA</td>
+                <td>${c.minCgpa}</td><td>${formatDate(c.applicationDeadline)}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${c.id})">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCompany(${c.id})">Delete</button>
+                </td>
+            </tr>`).join('');
+    } catch (error) {
+        showAlert(error.message);
+    }
+}
+
+function openCompanyModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Add company';
+    document.getElementById('company-form').reset();
+    companyModal.show();
+}
+
+async function openEdit(id) {
+    try {
+        const company = await api(`/companies/${id}`);
+        editingId = id;
+        document.getElementById('modal-title').textContent = 'Edit company';
+        document.getElementById('c-name').value = company.name;
+        document.getElementById('c-role').value = company.jobRole;
+        document.getElementById('c-package').value = company.packageCtc ?? '';
+        document.getElementById('c-cgpa').value = company.minCgpa;
+        document.getElementById('c-year').value = company.minGraduationYear ?? '';
+        document.getElementById('c-departments').value = company.requiredDepartments ?? '';
+        document.getElementById('c-skills').value = company.requiredSkills ?? '';
+        document.getElementById('c-deadline').value = company.applicationDeadline;
+        document.getElementById('c-description').value = company.description ?? '';
+        companyModal.show();
+    } catch (error) {
+        showAlert(error.message);
+    }
+}
+
+document.getElementById('company-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearAlert();
+    const body = {
+        name: document.getElementById('c-name').value.trim(),
+        jobRole: document.getElementById('c-role').value.trim(),
+        packageCtc: document.getElementById('c-package').value || null,
+        minCgpa: document.getElementById('c-cgpa').value,
+        requiredDepartments: document.getElementById('c-departments').value.trim(),
+        requiredSkills: document.getElementById('c-skills').value.trim(),
+        minGraduationYear: document.getElementById('c-year').value
+            ? parseInt(document.getElementById('c-year').value, 10) : null,
+        applicationDeadline: document.getElementById('c-deadline').value,
+        description: document.getElementById('c-description').value.trim(),
+    };
+    try {
+        if (editingId) {
+            await api(`/companies/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+        } else {
+            await api('/companies', { method: 'POST', body: JSON.stringify(body) });
+        }
+        companyModal.hide();
+        showAlert('Company saved.', 'success');
+        loadCompanies();
+    } catch (error) {
+        showAlert(error.message);
+    }
+});
+
+async function deleteCompany(id) {
+    if (!confirm('Delete this company?')) return;
+    try {
+        await api(`/companies/${id}`, { method: 'DELETE' });
+        showAlert('Company deleted.', 'success');
+        loadCompanies();
+    } catch (error) {
+        showAlert(error.message);
+    }
+}
+</script>
+</body>
+</html>

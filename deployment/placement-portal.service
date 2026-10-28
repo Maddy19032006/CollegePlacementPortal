@@ -1,0 +1,24 @@
+[Unit]
+Description=College Placement Portal Spring Boot Service
+After=syslog.target network.target mysql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/placement-portal
+ExecStart=/usr/bin/java -jar /opt/placement-portal/placement-portal.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment="SERVER_PORT=8081"
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=3306"
+Environment="DB_NAME=placement_portal"
+Environment="DB_USERNAME=placement_user"
+Environment="DB_PASSWORD=SecurePassword123!"
+
+[Install]
+WantedBy=multi-user.target

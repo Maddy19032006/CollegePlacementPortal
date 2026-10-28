@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard · Student</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="container">
+    <div id="alert-placeholder"></div>
+    <div class="page-kicker">Student workspace</div>
+    <h1 class="page-heading">Good to see you, <span id="welcome-name">...</span>.</h1>
+    <p class="page-subtitle">Stay focused on the next best move in your placement journey.</p>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card h-100"><div class="card-body">
+                <div class="stat-label">Placement readiness</div>
+                <div class="stat-value" id="readiness-score">-</div>
+                <div class="progress mb-1"><div id="readiness-bar" class="progress-bar bg-success" style="width:0%"></div></div>
+                <small class="text-muted">Your weighted preparation score</small>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100"><div class="card-body">
+                <div class="stat-label">Applications</div>
+                <div class="stat-value" id="total-applications">-</div>
+                <span class="text-muted">Roles you are actively pursuing</span>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100"><div class="card-body">
+                <div class="stat-label">Offers secured</div>
+                <div class="stat-value text-success" id="selected-count">-</div>
+                <span class="text-muted">Successful selections</span>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card"><div class="card-body">
+                <div class="section-title"><h5>Recent applications</h5><a href="/student-applications.html" class="small fw-bold">View all</a></div>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Applied</th></tr></thead>
+                        <tbody id="recent-applications"><tr><td colspan="4" class="text-muted">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div></div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card"><div class="card-body">
+                <div class="section-title"><h5>Upcoming deadlines</h5><a href="/companies.html" class="small fw-bold">Browse roles</a></div>
+                <ul class="list-group list-group-flush" id="upcoming-deadlines">
+                    <li class="list-group-item text-muted">Loading...</li>
+                </ul>
+            </div></div>
+        </div>
+    </div>
+    <div class="mt-4 mb-5">
+        <div class="section-title"><div><h5>Recommended for you</h5><small class="text-muted">Open roles matching your saved profile and skills.</small></div><a href="/companies.html" class="btn btn-sm btn-outline-primary">Explore all roles</a></div>
+        <div class="row g-3" id="recommended-jobs"><div class="col"><div class="card"><div class="card-body text-muted">Loading personalised opportunities...</div></div></div></div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async function () {
+    const user = await requireAuth();
+    requireRole(user, 'STUDENT', 'PLACEMENT_OFFICER', 'ADMIN');
+    document.getElementById('navbar').innerHTML = navbar('student-dashboard');
+    document.getElementById('welcome-name').textContent = user.fullName;
+
+    try {
+        const [dashboard, recommendations] = await Promise.all([
+            api('/students/dashboard'), api('/students/recommended-jobs')
+        ]);
+        document.getElementById('readiness-score').textContent = dashboard.preparation.readinessScore.toFixed(1);
+        document.getElementById('readiness-bar').style.width = dashboard.preparation.readinessScore + '%';
+        document.getElementById('total-applications').textContent = dashboard.totalApplications;
+        document.getElementById('selected-count').textContent = dashboard.selectedCount;
+
+        document.getElementById('recent-applications').innerHTML = dashboard.recentApplications.length
+            ? dashboard.recentApplications.map(a => `
+                <tr>
+                    <td>${escapeHtml(a.companyName)}</td><td>${escapeHtml(a.jobRole)}</td>
+                    <td>${statusBadge(a.status)}</td><td>${formatDate(a.appliedAt)}</td>
+                </tr>`).join('')
+            : '<tr><td colspan="4" class="text-muted">No applications yet. <a href="/companies.html">Browse companies</a></td></tr>';
+
+        document.getElementById('upcoming-deadlines').innerHTML = dashboard.upcomingDeadlines.length
+            ? dashboard.upcomingDeadlines.map(c => `
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>${escapeHtml(c.name)}</span><span class="text-danger">${formatDate(c.applicationDeadline)}</span>
+                </li>`).join('')
+            : '<li class="list-group-item text-muted">No upcoming deadlines.</li>';
+
+        document.getElementById('recommended-jobs').innerHTML = recommendations.length
+            ? recommendations.slice(0, 3).map(c => `
+                <div class="col-md-4"><div class="card opportunity-card h-100"><div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3"><span class="company-initial">${escapeHtml(c.name).charAt(0)}</span><span class="package-chip">${escapeHtml(c.packageCtc ?? '—')} LPA</span></div>
+                    <h5>${escapeHtml(c.name)}</h5><p class="text-muted mb-3">${escapeHtml(c.jobRole)}</p>
+                    <div class="d-flex justify-content-between align-items-center"><small class="text-muted">Min. CGPA ${escapeHtml(c.minCgpa)}</small><a class="btn btn-sm btn-primary" href="/companies.html">View role</a></div>
+                </div></div></div>`).join('')
+            : '<div class="col"><div class="card"><div class="card-body text-muted">Complete your profile to unlock tailored job recommendations.</div></div></div>';
+    } catch (error) {
+        showAlert(error.message);
+    }
+})();
+</script>
+</body>
+</html>

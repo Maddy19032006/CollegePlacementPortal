@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: placement-portal
+  labels:
+    app.kubernetes.io/name: placement-portal
+    app.kubernetes.io/part-of: college-placement-system

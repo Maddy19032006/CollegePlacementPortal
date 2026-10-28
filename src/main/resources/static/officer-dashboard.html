@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard · Placement Officer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="container">
+    <div id="alert-placeholder"></div>
+    <div class="page-kicker">Placement operations</div>
+    <h1 class="page-heading">Placement Officer Dashboard</h1>
+    <p class="page-subtitle">A live view of campus opportunities and candidate progress.</p>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <div class="stat-label">Students</div><div class="stat-value" id="stat-students">-</div>
+        </div></div></div>
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <div class="stat-label">Job offers</div><div class="stat-value" id="stat-companies">-</div>
+        </div></div></div>
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <div class="stat-label">Applications</div><div class="stat-value" id="stat-applications">-</div>
+        </div></div></div>
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <div class="stat-label">Selected / Rejected</div>
+            <div class="stat-value"><span class="text-success" id="stat-selected">-</span> /
+                <span class="text-danger" id="stat-rejected">-</span></div>
+        </div></div></div>
+    </div>
+
+    <div class="card"><div class="card-body">
+        <h5>Recent applications</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Student</th><th>Company</th><th>Status</th><th>Applied</th></tr></thead>
+                <tbody id="recent-applications"><tr><td colspan="4" class="text-muted">Loading...</td></tr></tbody>
+            </table>
+        </div>
+        <a href="/officer-applications.html" class="btn btn-sm btn-outline-primary mt-2">Manage all applications</a>
+    </div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async function () {
+    const user = await requireAuth();
+    requireRole(user, 'PLACEMENT_OFFICER', 'ADMIN');
+    document.getElementById('navbar').innerHTML = navbar('officer-dashboard');
+    try {
+        const dashboard = await api('/officer/dashboard');
+        document.getElementById('stat-students').textContent = dashboard.totalStudents;
+        document.getElementById('stat-companies').textContent = dashboard.totalCompanies;
+        document.getElementById('stat-applications').textContent = dashboard.totalApplications;
+        document.getElementById('stat-selected').textContent = dashboard.selectedCount;
+        document.getElementById('stat-rejected').textContent = dashboard.rejectedCount;
+        document.getElementById('recent-applications').innerHTML = dashboard.recentApplications.length ? dashboard.recentApplications.map(a => `
+            <tr><td>${escapeHtml(a.studentName)}</td><td>${escapeHtml(a.companyName)}</td>
+            <td>${statusBadge(a.status)}</td><td>${formatDate(a.appliedAt)}</td></tr>`).join('')
+            : '<tr><td colspan="4" class="text-muted">No applications have been submitted yet.</td></tr>';
+    } catch (error) {
+        showAlert(error.message);
+    }
+})();
+</script>
+</body>
+</html>

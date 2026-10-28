@@ -1,0 +1,47 @@
+# ---------- Build output ----------
+target/
+build/
+out/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ---------- IDE files ----------
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# ---------- OS specific ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Secrets / environment ----------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ---------- Logs ----------
+logs/
+*.log
+
+# ---------- Node (not used yet, kept for safety) ----------
+node_modules/
+
+# ---------- Temporary files ----------
+*.tmp
+*.bak
+*~
+.sonar/
+.scannerwork/
+
+# ---------- Freebuff local metadata ----------
+.freebuff/

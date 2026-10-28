@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: placement-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-placement_portal}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-rootpassword}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - placement-net
+
+  app:
+    build: .
+    image: ${APP_IMAGE:-placement-portal:local}
+    container_name: placement-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME:-placement_portal}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-rootpassword}
+      JPA_DDL_AUTO: update
+      DEMO_PASSWORD_STUDENT: ${DEMO_PASSWORD_STUDENT:-demoStudent@123}
+      DEMO_PASSWORD_OFFICER: ${DEMO_PASSWORD_OFFICER:-demoOfficer@123}
+      DEMO_PASSWORD_ADMIN: ${DEMO_PASSWORD_ADMIN:-demoAdmin@123}
+    ports:
+      - "${SERVER_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8081/login.html >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - placement-net
+
+volumes:
+  mysql-data:
+
+networks:
+  placement-net:
+    driver: bridge

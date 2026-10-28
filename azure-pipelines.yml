@@ -1,0 +1,89 @@
+# ==============================================================================
+# Azure DevOps CI/CD Pipeline for College Placement Portal
+# Course: ISWE406P / ISWE406L - Agile Development & DevOps
+# ==============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+stages:
+  - stage: BuildAndTest
+    displayName: 'Build, Test & Quality Gate'
+    jobs:
+      - job: MavenBuild
+        displayName: 'Maven Build & Automated Tests'
+        steps:
+          # Cache Maven dependencies for fast builds
+          - task: Cache@2
+            displayName: 'Cache Maven local repo'
+            inputs:
+              key: 'maven | "$(Agent.OS)" | **/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+                maven
+              path: $(MAVEN_CACHE_FOLDER)
+
+          # Set up Java
+          - task: JavaToolInstaller@0
+            displayName: 'Install Java 21'
+            inputs:
+              versionSpec: '21'
+              jdkArchitectureOption: 'x64'
+              jdkSourceOption: 'PreInstalled'
+
+          # Compile and run test suite with JaCoCo
+          - task: Maven@4
+            displayName: 'Execute Maven Test & JaCoCo'
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'clean test'
+              options: '-B'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              testRunTitle: 'Placement Portal Unit & Integration Tests'
+              codeCoverageToolOption: 'JaCoCo'
+              codeCoverageClassFilesDirectories: 'target/classes'
+              codeCoverageSourceDirectories: 'src/main/java'
+
+          # Package executable JAR
+          - task: Maven@4
+            displayName: 'Package JAR'
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'package'
+              options: '-B -DskipTests'
+
+          # Publish Artifact to Azure Pipeline Drops
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Runnable JAR Artifact'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/target/placement-portal.jar'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+
+  - stage: DockerBuildAndPackage
+    displayName: 'Containerization'
+    dependsOn: BuildAndTest
+    condition: succeeded()
+    jobs:
+      - job: DockerBuild
+        displayName: 'Build Docker Image'
+        steps:
+          - task: Docker@2
+            displayName: 'Build Production Container Image'
+            inputs:
+              command: 'build'
+              Dockerfile: '**/Dockerfile'
+              tags: |
+                latest
+                $(Build.BuildId)
