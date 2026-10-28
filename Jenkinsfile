@@ -7,6 +7,9 @@ pipeline {
     }
 
     environment {
+        // Add Docker CLI to PATH for Jenkins Service
+        PATH = "C:\\Users\\madhan.D\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin;${env.PATH}"
+
         // ── Docker Hub ──────────────────────────────────────────────────────────
         // Uses existing 'docker-hub-credentials' in Jenkins
         DOCKER_HUB_CREDS = credentials('docker-hub-credentials')
@@ -76,7 +79,7 @@ pipeline {
         // ── Stage 6 ─────────────────────────────────────────────────────────────
         stage('Docker Push to Hub') {
             steps {
-                bat "docker login -u %DOCKER_HUB_CREDS_USR% -p %DOCKER_HUB_CREDS_PSW%"
+                bat "echo %DOCKER_HUB_CREDS_PSW% | docker login -u %DOCKER_HUB_CREDS_USR% --password-stdin"
                 bat "docker push %IMAGE_NAME%:latest"
                 bat "docker push %IMAGE_NAME%:%BUILD_NUMBER%"
                 echo "Image pushed to Docker Hub: https://hub.docker.com/r/${env.IMAGE_NAME}"
