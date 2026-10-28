@@ -95,7 +95,7 @@ pipeline {
         // ── Stage 7 ─────────────────────────────────────────────────────────────
         stage('Deploy with Docker Compose') {
             steps {
-                bat "docker compose -f docker-compose.yml up -d"
+                bat "docker compose up -d"
                 echo 'Containers deployed and running with latest image.'
             }
         }
