@@ -1,13 +1,21 @@
 @echo off
 echo ===================================================
-echo  Starting College Placement Portal (Local Mode)
+echo  🎓 College Placement Portal - Quick Launcher
 echo ===================================================
-echo Prerequisites: Java 21/25 and Maven installed.
-echo App will be accessible at: http://localhost:8081
-echo Default Student: arjun / demoStudent@123
-echo Default Officer: officer / demoOfficer@123
-echo Default Admin:   admin / demoAdmin@123
-echo ===================================================
+echo.
+echo Choose how you want to run the portal:
+echo [1] Instant Demo Mode (Built-in In-Memory DB - Zero Install, Recommended)
+echo [2] Production / Local MySQL Mode (Requires local MySQL on port 3306)
+echo.
+set /p mode="Enter choice [1 or 2] (Default is 1): "
 
-mvn spring-boot:run
+if "%mode%"=="2" (
+    echo.
+    echo Starting with local MySQL...
+    mvn spring-boot:run
+) else (
+    echo.
+    echo Starting in Instant Demo Mode (In-Memory Database)...
+    mvn spring-boot:run -Dspring-boot.run.profiles=h2
+)
 pause
