@@ -95,7 +95,8 @@ pipeline {
         // ── Stage 7 ─────────────────────────────────────────────────────────────
         stage('Deploy with Docker Compose') {
             steps {
-                bat "docker-compose up -d"
+                bat 'docker rm -f placement-app placement-mysql || ver >NUL'
+                bat 'docker-compose -p placement-portal up -d'
                 echo 'Containers deployed and running with latest image.'
             }
         }
