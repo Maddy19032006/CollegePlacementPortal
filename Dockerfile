@@ -1,5 +1,5 @@
 # ---------- Stage 1: build the jar with Maven ----------
-FROM maven:3.9-eclipse-temurin-25 AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy the pom first so dependency download is cached by Docker layer cache
@@ -11,13 +11,13 @@ COPY src ./src
 RUN mvn -B clean package
 
 # ---------- Stage 2: minimal runtime image ----------
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring
 
-COPY --from=build /app/target/placement-portal.jar app.jar
+COPY --from=build /app/target/placement-portal*.jar app.jar
 
 EXPOSE 8081
 
