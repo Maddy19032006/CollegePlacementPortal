@@ -104,17 +104,22 @@ pipeline {
         // ── Stage 8 ─────────────────────────────────────────────────────────────
         stage('Smoke Test') {
             steps {
-                bat '''
-                    echo Waiting for application to respond on port 8081...
-                    for /L %%i in (1,1,30) do (
-                        curl -sf -o NUL -w "%%{http_code}" http://localhost:8081/login.html | findstr /C:"200" && (
-                            echo App is UP and responding with HTTP 200 OK!
-                            exit /b 0
-                        )
-                        timeout /t 3 /nobreak >NUL
-                    )
-                    echo ERROR: App did not respond within 90 seconds.
-                    exit /b 1
+                powershell '''
+                    $maxRetries = 30
+                    for ($i = 1; $i -le $maxRetries; $i++) {
+                        try {
+                            $res = Invoke-WebRequest -Uri "http://localhost:8081/login.html" -UseBasicParsing -TimeoutSec 3
+                            if ($res.StatusCode -eq 200) {
+                                Write-Host "App is UP and responding with HTTP 200 OK!"
+                                exit 0
+                            }
+                        } catch {
+                            Write-Host "Waiting for app to become ready... (attempt $i/$maxRetries)"
+                        }
+                        Start-Sleep -Seconds 3
+                    }
+                    Write-Error "App failed to respond within 90 seconds"
+                    exit 1
                 '''
             }
         }
