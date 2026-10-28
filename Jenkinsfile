@@ -2,113 +2,120 @@ pipeline {
     agent any
 
     tools {
-        // Configure these JDK/Maven installations in Jenkins (Manage Jenkins > Tools)
-        jdk 'jdk25'
+        // Jenkins > Manage Jenkins > Tools: add a JDK named 'jdk21' and Maven named 'maven3'
+        jdk 'jdk21'
         maven 'maven3'
     }
 
     environment {
-        // SonarQube: create a "sonar-token" Secret Text credential in Jenkins.
-        // The SonarQube server URL is configured in Manage Jenkins > System.
-        SCANNER_HOME = tool 'sonar-scanner'
+        // ── Docker Hub ──────────────────────────────────────────────────────────
+        // In Jenkins: Manage Jenkins > Credentials > Global > Add:
+        //   Kind: Username with password, ID: docker-hub-creds
+        //   Username: your Docker Hub username   Password: your Docker Hub password/PAT
+        DOCKER_HUB_CREDS = credentials('docker-hub-creds')
+        // Change 'maddy19032006' below to your actual Docker Hub username
+        IMAGE_NAME = "maddy19032006/placement-portal"
+
+        // ── GitHub ───────────────────────────────────────────────────────────────
+        // Jenkins polls this repo (or receives a webhook) to trigger the pipeline.
+        // Repo: https://github.com/Maddy19032006/CollegePlacementPortal
     }
 
     options {
         timestamps()
         disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '20'))
+        buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
     stages {
-        stage('Checkout') {
+
+        // ── Stage 1 ─────────────────────────────────────────────────────────────
+        stage('Checkout from GitHub') {
             steps {
+                // Jenkins SCM integration: pulls latest code from GitHub automatically
                 checkout scm
+                echo "Checked out branch: ${env.GIT_BRANCH} @ ${env.GIT_COMMIT}"
             }
         }
 
-        stage('Build') {
+        // ── Stage 2 ─────────────────────────────────────────────────────────────
+        stage('Build & Compile') {
             steps {
-                bat 'mvn -B clean compile'
+                bat 'mvn -B clean compile -q'
             }
         }
 
-        stage('Unit & Integration Tests') {
+        // ── Stage 3 ─────────────────────────────────────────────────────────────
+        stage('Automated Tests (JUnit + JaCoCo)') {
             steps {
-                bat 'mvn -B test'
+                bat 'mvn -B test jacoco:report'
             }
             post {
                 always {
+                    // Publish Surefire test results in Jenkins UI
                     junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                    echo 'Test results published. Check the Test Results trend in the job sidebar.'
                 }
             }
         }
 
-        stage('Code Quality (SonarQube)') {
-            when {
-                // Runs only when SonarQube is configured; see docs/setup-and-verification.md
-                expression { env.SONAR_HOST_URL != null }
-            }
+        // ── Stage 4 ─────────────────────────────────────────────────────────────
+        stage('Package JAR') {
             steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    bat 'mvn -B sonar:sonar -Dsonar.host.url=%SONAR_HOST_URL% -Dsonar.token=%SONAR_TOKEN%'
-                }
-            }
-        }
-
-        stage('Package') {
-            steps {
-                bat 'mvn -B -DskipTests package'
+                bat 'mvn -B -DskipTests package -q'
             }
             post {
                 success {
-                    archiveArtifacts artifacts: 'target/placement-portal.jar', fingerprint: true
+                    archiveArtifacts artifacts: 'target/placement-portal*.jar', fingerprint: true
+                    echo 'Executable JAR archived as a Jenkins build artifact.'
                 }
             }
         }
 
-        stage('Docker Build') {
-            when { expression { env.DOCKER_REGISTRY != null } }
+        // ── Stage 5 ─────────────────────────────────────────────────────────────
+        stage('Docker Build Image') {
             steps {
-                withCredentials([usernamePassword(
-                        credentialsId: 'docker-registry',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS')]) {
-                    bat 'docker build -t %DOCKER_REGISTRY%/placement-portal:%BUILD_NUMBER% .'
-                }
+                // Uses the multi-stage Dockerfile at the repo root
+                bat "docker build -t %IMAGE_NAME%:latest -t %IMAGE_NAME%:%BUILD_NUMBER% ."
+                echo "Docker image built: ${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
             }
         }
 
-        stage('Docker Push') {
-            when { expression { env.DOCKER_REGISTRY != null } }
+        // ── Stage 6 ─────────────────────────────────────────────────────────────
+        stage('Docker Push to Hub') {
             steps {
-                withCredentials([usernamePassword(
-                        credentialsId: 'docker-registry',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS')]) {
-                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS% %DOCKER_REGISTRY%'
-                    bat 'docker push %DOCKER_REGISTRY%/placement-portal:%BUILD_NUMBER%'
-                }
+                // Login with the Jenkins credential and push both tags
+                bat "docker login -u %DOCKER_HUB_CREDS_USR% -p %DOCKER_HUB_CREDS_PSW%"
+                bat "docker push %IMAGE_NAME%:latest"
+                bat "docker push %IMAGE_NAME%:%BUILD_NUMBER%"
+                echo "Image pushed to Docker Hub: https://hub.docker.com/r/${env.IMAGE_NAME}"
             }
         }
 
-        stage('Deploy') {
-            when { expression { env.DEPLOY_TARGET != null } }
+        // ── Stage 7 ─────────────────────────────────────────────────────────────
+        stage('Deploy with Docker Compose') {
             steps {
-                // DEPLOY_TARGET example: "user@server:/opt/placement-portal"
-                // This copies the compose project and restarts the containers.
-                bat 'docker compose -f docker-compose.yml up -d --build'
+                // Pulls the freshly pushed image and recreates running containers.
+                // APP_IMAGE overrides the image used by the 'app' service in docker-compose.yml
+                bat "set APP_IMAGE=%IMAGE_NAME%:%BUILD_NUMBER% && docker compose -f docker-compose.yml up -d --pull always --no-build"
+                echo 'Containers restarted with new image.'
             }
         }
 
+        // ── Stage 8 ─────────────────────────────────────────────────────────────
         stage('Smoke Test') {
             steps {
-                // Waits for the app to answer on the login page; fails the build otherwise.
+                // Poll http://localhost:8081/login.html up to 90 seconds for HTTP 200
                 bat '''
-                    timeout 90
+                    echo Waiting for application to become healthy...
                     for /L %%i in (1,1,30) do (
-                        curl -s -o NUL -w "%%{http_code}" http://localhost:8081/login.html | findstr "200" && exit /b 0
+                        curl -sf -o NUL -w "%%{http_code}" http://localhost:8081/login.html | findstr /C:"200" && (
+                            echo App is UP and responding.
+                            exit /b 0
+                        )
                         timeout /t 3 /nobreak >NUL
                     )
+                    echo ERROR: App did not respond within 90 seconds.
                     exit /b 1
                 '''
             }
@@ -117,12 +124,16 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully.'
+            echo "=== PIPELINE PASSED === Build #${env.BUILD_NUMBER} deployed successfully."
+            echo "App URL: http://localhost:8081"
+            echo "Docker Hub: https://hub.docker.com/r/${env.IMAGE_NAME}"
         }
         failure {
-            echo 'Pipeline failed. Check the stage that failed first.'
+            echo "=== PIPELINE FAILED === Check the stage that failed above for details."
         }
         always {
+            // Remove dangling/intermediate Docker images to keep the Jenkins agent clean
+            bat 'docker image prune -f'
             cleanWs()
         }
     }
