@@ -14,7 +14,7 @@ pipeline {
         //   Username: your Docker Hub username   Password: your Docker Hub password/PAT
         DOCKER_HUB_CREDS = credentials('docker-hub-creds')
         // Change 'maddy19032006' below to your actual Docker Hub username
-        IMAGE_NAME = "maddy19032006/placement-portal"
+        IMAGE_NAME = "theatomicxm/placement-portal"
 
         // ── GitHub ───────────────────────────────────────────────────────────────
         // Jenkins polls this repo (or receives a webhook) to trigger the pipeline.
