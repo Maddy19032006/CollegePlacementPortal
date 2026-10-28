@@ -1,8 +1,8 @@
 name: Continuous Delivery
 
 on:
-  push:
-    branches: [main]
+  # Only runs when manually triggered from GitHub Actions tab.
+  # Automatic push-to-GHCR is disabled — Docker Hub publishing is handled by Jenkins.
   workflow_dispatch:
 
 concurrency:
