@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreparationScoreResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.dto</a> &gt; <span class="el_source">PreparationScoreResponse.java</span></div><h1>PreparationScoreResponse.java</h1><pre class="source lang-java linenums">package com.college.placement.dto;
+
+import com.college.placement.entity.PreparationScore;
+
+/**
+ * View of preparation scores including the computed readiness score.
+ */
+<span class="fc" id="L8">public record PreparationScoreResponse(</span>
+        Integer aptitude,
+        Integer coding,
+        Integer technical,
+        Integer projects,
+        Integer communication,
+        double readinessScore
+) {
+    public static PreparationScoreResponse from(PreparationScore score) {
+<span class="fc" id="L17">        return new PreparationScoreResponse(</span>
+<span class="fc" id="L18">                score.getAptitude(),</span>
+<span class="fc" id="L19">                score.getCoding(),</span>
+<span class="fc" id="L20">                score.getTechnical(),</span>
+<span class="fc" id="L21">                score.getProjects(),</span>
+<span class="fc" id="L22">                score.getCommunication(),</span>
+<span class="fc" id="L23">                score.getReadinessScore()</span>
+        );
+    }
+
+    public static PreparationScoreResponse empty() {
+<span class="nc" id="L28">        return new PreparationScoreResponse(0, 0, 0, 0, 0, 0.0);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

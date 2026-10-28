@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DemoDataSeeder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.config</a> &gt; <span class="el_source">DemoDataSeeder.java</span></div><h1>DemoDataSeeder.java</h1><pre class="source lang-java linenums">package com.college.placement.config;
+
+import com.college.placement.entity.Application;
+import com.college.placement.entity.ApplicationStatus;
+import com.college.placement.entity.Company;
+import com.college.placement.entity.PreparationScore;
+import com.college.placement.entity.Role;
+import com.college.placement.entity.Skill;
+import com.college.placement.entity.StudentProfile;
+import com.college.placement.entity.StudentSkill;
+import com.college.placement.entity.User;
+import com.college.placement.repository.ApplicationRepository;
+import com.college.placement.repository.CompanyRepository;
+import com.college.placement.repository.PreparationScoreRepository;
+import com.college.placement.repository.SkillRepository;
+import com.college.placement.repository.StudentProfileRepository;
+import com.college.placement.repository.StudentSkillRepository;
+import com.college.placement.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Seeds demo data on first startup so the application is immediately
+ * demonstrable with a fresh database. Runs only when the users table is empty.
+ *
+ * All demo passwords come from configuration (see .env.example) - none are
+ * hardcoded here.
+ */
+@Component
+public class DemoDataSeeder implements ApplicationRunner {
+
+<span class="fc" id="L42">    private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);</span>
+
+    private final UserRepository userRepository;
+    private final StudentProfileRepository studentProfileRepository;
+    private final CompanyRepository companyRepository;
+    private final ApplicationRepository applicationRepository;
+    private final PreparationScoreRepository preparationScoreRepository;
+    private final SkillRepository skillRepository;
+    private final StudentSkillRepository studentSkillRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Value(&quot;${app.demo-passwords.student}&quot;)
+    private String studentPassword;
+
+    @Value(&quot;${app.demo-passwords.officer}&quot;)
+    private String officerPassword;
+
+    @Value(&quot;${app.demo-passwords.admin}&quot;)
+    private String adminPassword;
+
+    public DemoDataSeeder(UserRepository userRepository,
+                          StudentProfileRepository studentProfileRepository,
+                          CompanyRepository companyRepository,
+                          ApplicationRepository applicationRepository,
+                          PreparationScoreRepository preparationScoreRepository,
+                          SkillRepository skillRepository,
+                          StudentSkillRepository studentSkillRepository,
+<span class="fc" id="L69">                          PasswordEncoder passwordEncoder) {</span>
+<span class="fc" id="L70">        this.userRepository = userRepository;</span>
+<span class="fc" id="L71">        this.studentProfileRepository = studentProfileRepository;</span>
+<span class="fc" id="L72">        this.companyRepository = companyRepository;</span>
+<span class="fc" id="L73">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L74">        this.preparationScoreRepository = preparationScoreRepository;</span>
+<span class="fc" id="L75">        this.skillRepository = skillRepository;</span>
+<span class="fc" id="L76">        this.studentSkillRepository = studentSkillRepository;</span>
+<span class="fc" id="L77">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L78">    }</span>
+
+    @Override
+    @Transactional
+    public void run(ApplicationArguments args) {
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (userRepository.count() &gt; 0) {</span>
+<span class="nc" id="L84">            log.info(&quot;Existing data found - skipping demo data seeding&quot;);</span>
+<span class="nc" id="L85">            return;</span>
+        }
+<span class="fc" id="L87">        log.info(&quot;Seeding demo data...&quot;);</span>
+
+<span class="fc" id="L89">        seedAdmin();</span>
+<span class="fc" id="L90">        seedOfficer();</span>
+<span class="fc" id="L91">        StudentProfile arjun = seedStudent(&quot;arjun&quot;, &quot;arjun.sharma@college.edu&quot;, &quot;Arjun Sharma&quot;,</span>
+                &quot;CS2021001&quot;, &quot;CSE&quot;, 2026, new BigDecimal(&quot;8.6&quot;),
+<span class="fc" id="L93">                List.of(&quot;Java&quot;, &quot;SQL&quot;, &quot;Spring Boot&quot;, &quot;Data Structures&quot;),</span>
+                new PreparationScore(null, 80, 75, 85, 70, 78));
+<span class="fc" id="L95">        StudentProfile priya = seedStudent(&quot;priya&quot;, &quot;priya.iyer@college.edu&quot;, &quot;Priya Iyer&quot;,</span>
+                &quot;CS2021002&quot;, &quot;IT&quot;, 2026, new BigDecimal(&quot;9.1&quot;),
+<span class="fc" id="L97">                List.of(&quot;Python&quot;, &quot;Machine Learning&quot;, &quot;SQL&quot;),</span>
+                new PreparationScore(null, 85, 65, 80, 90, 88));
+<span class="fc" id="L99">        StudentProfile rahul = seedStudent(&quot;rahul&quot;, &quot;rahul.verma@college.edu&quot;, &quot;Rahul Verma&quot;,</span>
+                &quot;EC2021007&quot;, &quot;ECE&quot;, 2026, new BigDecimal(&quot;7.2&quot;),
+<span class="fc" id="L101">                List.of(&quot;C++&quot;, &quot;Embedded C&quot;),</span>
+                new PreparationScore(null, 60, 55, 65, 50, 72));
+
+<span class="fc" id="L104">        Company infosys = seedCompany(&quot;Infotech Solutions&quot;, &quot;Software Engineer&quot;, &quot;8.5&quot;,</span>
+<span class="fc" id="L105">                &quot;CSE, IT, ECE&quot;, &quot;Java, SQL&quot;, 2026, LocalDate.now().plusDays(20),</span>
+                &quot;Service-based company hiring across all departments.&quot;);
+<span class="fc" id="L107">        Company datawave = seedCompany(&quot;DataWave Analytics&quot;, &quot;Data Analyst&quot;, &quot;9.0&quot;,</span>
+<span class="fc" id="L108">                &quot;CSE, IT&quot;, &quot;Python, SQL&quot;, 2026, LocalDate.now().plusDays(10),</span>
+                &quot;Analytics firm focused on data platforms.&quot;);
+<span class="fc" id="L110">        Company circuitcore = seedCompany(&quot;CircuitCore Systems&quot;, &quot;Embedded Engineer&quot;, &quot;7.0&quot;,</span>
+<span class="fc" id="L111">                &quot;ECE, EEE&quot;, &quot;C++&quot;, 2026, LocalDate.now().plusDays(35),</span>
+                &quot;Embedded systems and IoT product company.&quot;);
+
+<span class="fc" id="L114">        seedApplication(arjun, infosys, ApplicationStatus.SHORTLISTED);</span>
+<span class="fc" id="L115">        seedApplication(priya, datawave, ApplicationStatus.ONLINE_TEST);</span>
+<span class="fc" id="L116">        seedApplication(rahul, circuitcore, ApplicationStatus.APPLIED);</span>
+
+<span class="fc" id="L118">        log.info(&quot;Demo data seeding complete&quot;);</span>
+<span class="fc" id="L119">    }</span>
+
+    private void seedAdmin() {
+<span class="fc" id="L122">        userRepository.save(new User(&quot;admin&quot;, &quot;admin@college.edu&quot;,</span>
+<span class="fc" id="L123">                passwordEncoder.encode(adminPassword), &quot;System Administrator&quot;, Role.ADMIN));</span>
+<span class="fc" id="L124">    }</span>
+
+    private void seedOfficer() {
+<span class="fc" id="L127">        userRepository.save(new User(&quot;officer&quot;, &quot;officer@college.edu&quot;,</span>
+<span class="fc" id="L128">                passwordEncoder.encode(officerPassword), &quot;Prof. Meena Rao&quot;, Role.PLACEMENT_OFFICER));</span>
+<span class="fc" id="L129">    }</span>
+
+    private StudentProfile seedStudent(String username, String email, String fullName,
+                                       String registrationNumber, String department, int graduationYear,
+                                       BigDecimal cgpa, List&lt;String&gt; skills, PreparationScore scores) {
+<span class="fc" id="L134">        User user = userRepository.save(new User(username, email,</span>
+<span class="fc" id="L135">                passwordEncoder.encode(studentPassword), fullName, Role.STUDENT));</span>
+
+<span class="fc" id="L137">        StudentProfile profile = new StudentProfile();</span>
+<span class="fc" id="L138">        profile.setUser(user);</span>
+<span class="fc" id="L139">        profile.setRegistrationNumber(registrationNumber);</span>
+<span class="fc" id="L140">        profile.setPhone(&quot;98765432&quot; + (10 + registrationNumber.length()));</span>
+<span class="fc" id="L141">        profile.setDepartment(department);</span>
+<span class="fc" id="L142">        profile.setProgram(&quot;B.Tech&quot;);</span>
+<span class="fc" id="L143">        profile.setGraduationYear(graduationYear);</span>
+<span class="fc" id="L144">        profile.setCgpa(cgpa);</span>
+<span class="fc" id="L145">        profile.setCertifications(&quot; participated in college coding contests&quot;);</span>
+<span class="fc" id="L146">        profile.setProjects(&quot;Academic mini-projects and a capstone project&quot;);</span>
+<span class="fc" id="L147">        profile.setInternshipExperience(&quot;Industry-ready coursework and hands-on lab experience&quot;);</span>
+<span class="fc" id="L148">        profile.setExtracurricularActivities(&quot;Coding club participant and peer mentor&quot;);</span>
+<span class="fc" id="L149">        profile.setResumeSummary(&quot;Motivated &quot; + department + &quot; student looking for software roles&quot;);</span>
+<span class="fc" id="L150">        profile = studentProfileRepository.save(profile);</span>
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        for (String skillName : skills) {</span>
+<span class="fc" id="L153">            Skill skill = skillRepository.findByNameIgnoreCase(skillName)</span>
+<span class="fc" id="L154">                    .orElseGet(() -&gt; skillRepository.save(new Skill(skillName)));</span>
+<span class="fc" id="L155">            studentSkillRepository.save(new StudentSkill(profile, skill));</span>
+<span class="fc" id="L156">        }</span>
+
+<span class="fc" id="L158">        scores.setStudent(profile);</span>
+<span class="fc" id="L159">        preparationScoreRepository.save(scores);</span>
+<span class="fc" id="L160">        return profile;</span>
+    }
+
+    private Company seedCompany(String name, String jobRole, String minCgpa,
+                                String departments, String skills, int minGraduationYear,
+                                LocalDate deadline, String description) {
+<span class="fc" id="L166">        Company company = new Company();</span>
+<span class="fc" id="L167">        company.setName(name);</span>
+<span class="fc" id="L168">        company.setJobRole(jobRole);</span>
+<span class="fc" id="L169">        company.setPackageCtc(new BigDecimal(&quot;6.5&quot;));</span>
+<span class="fc" id="L170">        company.setMinCgpa(new BigDecimal(minCgpa));</span>
+<span class="fc" id="L171">        company.setRequiredDepartments(departments);</span>
+<span class="fc" id="L172">        company.setRequiredSkills(skills);</span>
+<span class="fc" id="L173">        company.setMinGraduationYear(minGraduationYear);</span>
+<span class="fc" id="L174">        company.setApplicationDeadline(deadline);</span>
+<span class="fc" id="L175">        company.setDescription(description);</span>
+<span class="fc" id="L176">        return companyRepository.save(company);</span>
+    }
+
+    private void seedApplication(StudentProfile student, Company company, ApplicationStatus status) {
+<span class="fc" id="L180">        Application application = new Application();</span>
+<span class="fc" id="L181">        application.setStudent(student);</span>
+<span class="fc" id="L182">        application.setCompany(company);</span>
+<span class="fc" id="L183">        application.setStatus(status);</span>
+<span class="fc" id="L184">        applicationRepository.save(application);</span>
+<span class="fc" id="L185">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

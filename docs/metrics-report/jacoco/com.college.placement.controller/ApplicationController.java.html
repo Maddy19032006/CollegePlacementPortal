@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApplicationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.controller</a> &gt; <span class="el_source">ApplicationController.java</span></div><h1>ApplicationController.java</h1><pre class="source lang-java linenums">package com.college.placement.controller;
+
+import com.college.placement.dto.ApplicationResponse;
+import com.college.placement.dto.ApplicationStatusRequest;
+import com.college.placement.entity.ApplicationStatus;
+import com.college.placement.service.ApplicationService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+/**
+ * Students apply and view their own applications; officers list all
+ * applications and change statuses.
+ */
+@RestController
+@RequestMapping(&quot;/api/applications&quot;)
+public class ApplicationController {
+
+    private final ApplicationService applicationService;
+
+<span class="fc" id="L32">    public ApplicationController(ApplicationService applicationService) {</span>
+<span class="fc" id="L33">        this.applicationService = applicationService;</span>
+<span class="fc" id="L34">    }</span>
+
+    /** Student: apply to a company. */
+    @PostMapping
+    public ResponseEntity&lt;ApplicationResponse&gt; apply(@RequestParam Long companyId) {
+<span class="fc" id="L39">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L40">                .body(applicationService.apply(companyId));</span>
+    }
+
+    /** Officer/admin: all applications, optionally filtered by status. */
+    @GetMapping
+    @PreAuthorize(&quot;hasAnyRole('PLACEMENT_OFFICER','ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;ApplicationResponse&gt;&gt; all(
+            @RequestParam(required = false) ApplicationStatus status) {
+<span class="nc" id="L48">        return ResponseEntity.ok(applicationService.getAll(status));</span>
+    }
+
+    /** Officer/admin: update an application's status (validated transition). */
+    @PutMapping(&quot;/{id}/status&quot;)
+    @PreAuthorize(&quot;hasAnyRole('PLACEMENT_OFFICER','ADMIN')&quot;)
+    public ResponseEntity&lt;ApplicationResponse&gt; updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody ApplicationStatusRequest request) {
+<span class="nc" id="L57">        return ResponseEntity.ok(applicationService.updateStatus(id, request));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

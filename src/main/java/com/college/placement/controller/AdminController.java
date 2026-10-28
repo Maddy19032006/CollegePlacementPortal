@@ -66,4 +66,9 @@ public class AdminController {
     public ResponseEntity<AdminStatsResponse> stats() {
         return ResponseEntity.ok(adminService.getStats());
     }
+
+    @GetMapping("/agile-metrics")
+    public ResponseEntity<com.college.placement.dto.AgileMetricsResponse> agileMetrics() {
+        return ResponseEntity.ok(adminService.getAgileMetrics());
+    }
 }

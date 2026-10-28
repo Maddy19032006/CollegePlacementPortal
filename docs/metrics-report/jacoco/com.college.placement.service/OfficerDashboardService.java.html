@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfficerDashboardService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">OfficerDashboardService.java</span></div><h1>OfficerDashboardService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.college.placement.dto.ApplicationResponse;
+import com.college.placement.dto.OfficerDashboardResponse;
+import com.college.placement.entity.ApplicationStatus;
+import com.college.placement.entity.Role;
+import com.college.placement.repository.ApplicationRepository;
+import com.college.placement.repository.CompanyRepository;
+import com.college.placement.repository.StudentProfileRepository;
+import com.college.placement.repository.UserRepository;
+
+/**
+ * Aggregated numbers for the placement officer dashboard.
+ */
+@Service
+@Transactional(readOnly = true)
+public class OfficerDashboardService {
+
+    private final UserRepository userRepository;
+    private final StudentProfileRepository studentProfileRepository;
+    private final CompanyRepository companyRepository;
+    private final ApplicationRepository applicationRepository;
+
+    public OfficerDashboardService(UserRepository userRepository,
+                                   StudentProfileRepository studentProfileRepository,
+                                   CompanyRepository companyRepository,
+<span class="fc" id="L32">                                   ApplicationRepository applicationRepository) {</span>
+<span class="fc" id="L33">        this.userRepository = userRepository;</span>
+<span class="fc" id="L34">        this.studentProfileRepository = studentProfileRepository;</span>
+<span class="fc" id="L35">        this.companyRepository = companyRepository;</span>
+<span class="fc" id="L36">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L37">    }</span>
+
+    public OfficerDashboardResponse getDashboard() {
+<span class="fc" id="L40">        long students = studentProfileRepository.count();</span>
+<span class="fc" id="L41">        long companies = companyRepository.count();</span>
+<span class="fc" id="L42">        long applications = applicationRepository.count();</span>
+<span class="fc" id="L43">        long selected = applicationRepository.findByStatusOrderByAppliedAtDesc(ApplicationStatus.SELECTED).size();</span>
+<span class="fc" id="L44">        long rejected = applicationRepository.findByStatusOrderByAppliedAtDesc(ApplicationStatus.REJECTED).size();</span>
+
+<span class="fc" id="L46">        List&lt;ApplicationResponse&gt; recent = applicationRepository.findAllByOrderByAppliedAtDesc().stream()</span>
+<span class="fc" id="L47">                .limit(5)</span>
+<span class="fc" id="L48">                .map(ApplicationResponse::from)</span>
+<span class="fc" id="L49">                .toList();</span>
+
+<span class="fc" id="L51">        return new OfficerDashboardResponse(students, companies, applications, selected, rejected, recent);</span>
+    }
+
+    public long countStudents() {
+<span class="nc" id="L55">        return userRepository.findByRoleAndRemovedFalse(Role.STUDENT).size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

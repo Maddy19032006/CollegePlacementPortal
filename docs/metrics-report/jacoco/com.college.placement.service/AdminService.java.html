@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">AdminService.java</span></div><h1>AdminService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.college.placement.dto.AdminStatsResponse;
+import com.college.placement.dto.RegisterRequest;
+import com.college.placement.dto.UserResponse;
+import com.college.placement.dto.UserStatusRequest;
+import com.college.placement.entity.ApplicationStatus;
+import com.college.placement.entity.Role;
+import com.college.placement.entity.User;
+import com.college.placement.exception.BusinessException;
+import com.college.placement.exception.ResourceNotFoundException;
+import com.college.placement.repository.ApplicationRepository;
+import com.college.placement.repository.CompanyRepository;
+import com.college.placement.repository.PreparationScoreRepository;
+import com.college.placement.repository.StudentSkillRepository;
+import com.college.placement.repository.UserRepository;
+
+/**
+ * Admin functionality: view users, enable/disable accounts and view statistics.
+ */
+@Service
+public class AdminService {
+
+    private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
+    private final ApplicationRepository applicationRepository;
+    private final com.college.placement.repository.StudentProfileRepository studentProfileRepository;
+    private final PreparationScoreRepository preparationScoreRepository;
+    private final StudentSkillRepository studentSkillRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    public AdminService(UserRepository userRepository,
+                        CompanyRepository companyRepository,
+                        ApplicationRepository applicationRepository,
+                        com.college.placement.repository.StudentProfileRepository studentProfileRepository,
+                        PreparationScoreRepository preparationScoreRepository,
+                        StudentSkillRepository studentSkillRepository,
+<span class="fc" id="L45">                        org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {</span>
+<span class="fc" id="L46">        this.userRepository = userRepository;</span>
+<span class="fc" id="L47">        this.companyRepository = companyRepository;</span>
+<span class="fc" id="L48">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L49">        this.studentProfileRepository = studentProfileRepository;</span>
+<span class="fc" id="L50">        this.preparationScoreRepository = preparationScoreRepository;</span>
+<span class="fc" id="L51">        this.studentSkillRepository = studentSkillRepository;</span>
+<span class="fc" id="L52">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L53">    }</span>
+
+    public List&lt;UserResponse&gt; getAllUsers() {
+<span class="nc" id="L56">        return userRepository.findByRemovedFalse().stream().map(UserResponse::from).toList();</span>
+    }
+
+    public List&lt;UserResponse&gt; getUsersByRole(Role role) {
+<span class="nc" id="L60">        return userRepository.findByRoleAndRemovedFalse(role).stream().map(UserResponse::from).toList();</span>
+    }
+
+    /** Creates a user from the protected administration area. */
+    @Transactional
+    public UserResponse createUser(RegisterRequest request) {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (userRepository.existsByUsername(request.username())) {</span>
+<span class="nc" id="L67">            throw new BusinessException(&quot;Username is already taken&quot;);</span>
+        }
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (userRepository.existsByEmail(request.email())) {</span>
+<span class="nc" id="L70">            throw new BusinessException(&quot;Email is already registered&quot;);</span>
+        }
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (request.role() == Role.STUDENT) {</span>
+<span class="nc bnc" id="L74" title="All 4 branches missed.">            if (request.studentId() == null || request.studentId().isBlank()) {</span>
+<span class="nc" id="L75">                throw new BusinessException(&quot;Student ID / Roll Number is required for students&quot;);</span>
+            }
+<span class="nc bnc" id="L77" title="All 4 branches missed.">            if (request.department() == null || request.department().isBlank()) {</span>
+<span class="nc" id="L78">                throw new BusinessException(&quot;Department is required for students&quot;);</span>
+            }
+<span class="nc bnc" id="L80" title="All 4 branches missed.">            if (request.degree() == null || request.degree().isBlank()) {</span>
+<span class="nc" id="L81">                throw new BusinessException(&quot;Degree is required for students&quot;);</span>
+            }
+        }
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (request.role() == Role.PLACEMENT_OFFICER) {</span>
+<span class="nc bnc" id="L86" title="All 4 branches missed.">            if (request.employeeId() == null || request.employeeId().isBlank()) {</span>
+<span class="nc" id="L87">                throw new BusinessException(&quot;Employee ID is required for placement officers&quot;);</span>
+            }
+<span class="nc bnc" id="L89" title="All 4 branches missed.">            if (request.department() == null || request.department().isBlank()) {</span>
+<span class="nc" id="L90">                throw new BusinessException(&quot;Department is required for placement officers&quot;);</span>
+            }
+<span class="nc bnc" id="L92" title="All 4 branches missed.">            if (request.companyName() == null || request.companyName().isBlank()) {</span>
+<span class="nc" id="L93">                throw new BusinessException(&quot;Company Name is required for placement officers&quot;);</span>
+            }
+<span class="nc bnc" id="L95" title="All 4 branches missed.">            if (request.designation() == null || request.designation().isBlank()) {</span>
+<span class="nc" id="L96">                throw new BusinessException(&quot;Designation is required for placement officers&quot;);</span>
+            }
+        }
+
+<span class="nc" id="L100">        User user = new User(</span>
+<span class="nc" id="L101">                request.username().trim(),</span>
+<span class="nc" id="L102">                request.email().trim(),</span>
+<span class="nc" id="L103">                passwordEncoder.encode(request.password()),</span>
+<span class="nc" id="L104">                request.fullName().trim(),</span>
+<span class="nc" id="L105">                request.role()</span>
+        );
+
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (request.role() == Role.PLACEMENT_OFFICER) {</span>
+<span class="nc" id="L109">            user.setEmployeeId(request.employeeId());</span>
+<span class="nc" id="L110">            user.setDepartment(request.department());</span>
+<span class="nc" id="L111">            user.setCompanyName(request.companyName());</span>
+<span class="nc" id="L112">            user.setDesignation(request.designation());</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        } else if (request.role() == Role.STUDENT) {</span>
+<span class="nc" id="L114">            user.setStudentId(request.studentId());</span>
+<span class="nc" id="L115">            user.setDepartment(request.department());</span>
+<span class="nc" id="L116">            user.setDegree(request.degree());</span>
+        }
+
+<span class="nc" id="L119">        return UserResponse.from(userRepository.save(user));</span>
+    }
+
+    @Transactional
+    public UserResponse setEnabled(Long userId, UserStatusRequest request) {
+<span class="nc" id="L124">        User user = userRepository.findById(userId)</span>
+<span class="nc" id="L125">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with id &quot; + userId));</span>
+<span class="nc bnc" id="L126" title="All 4 branches missed.">        if (!request.enabled() &amp;&amp; user.getRole() == Role.ADMIN) {</span>
+<span class="nc" id="L127">            throw new BusinessException(&quot;Admin accounts cannot be disabled&quot;);</span>
+        }
+<span class="nc" id="L129">        user.setEnabled(request.enabled());</span>
+<span class="nc" id="L130">        return UserResponse.from(userRepository.save(user));</span>
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+<span class="fc" id="L135">        User user = userRepository.findById(userId)</span>
+<span class="pc" id="L136">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with id &quot; + userId));</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (user.getRole() == Role.ADMIN) {</span>
+<span class="fc" id="L138">            throw new BusinessException(&quot;Admin accounts cannot be deleted&quot;);</span>
+        }
+
+<span class="fc" id="L141">        studentProfileRepository.findByUserId(userId).ifPresent(profile -&gt; {</span>
+<span class="nc" id="L142">            applicationRepository.deleteByStudent(profile);</span>
+<span class="nc" id="L143">            studentSkillRepository.deleteByStudent(profile);</span>
+<span class="nc" id="L144">            preparationScoreRepository.deleteByStudent(profile);</span>
+<span class="nc" id="L145">            studentProfileRepository.delete(profile);</span>
+<span class="nc" id="L146">        });</span>
+<span class="fc" id="L147">        user.setEnabled(false);</span>
+<span class="fc" id="L148">        user.setRemoved(true);</span>
+<span class="fc" id="L149">        userRepository.save(user);</span>
+<span class="fc" id="L150">    }</span>
+
+    public AdminStatsResponse getStats() {
+<span class="nc" id="L153">        List&lt;User&gt; users = userRepository.findByRemovedFalse();</span>
+<span class="nc" id="L154">        Map&lt;String, Long&gt; byStatus = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        for (ApplicationStatus status : ApplicationStatus.values()) {</span>
+<span class="nc" id="L156">            byStatus.put(status.name(), (long) applicationRepository.findByStatusOrderByAppliedAtDesc(status).size());</span>
+        }
+
+<span class="nc" id="L159">        List&lt;AdminStatsResponse.DepartmentStat&gt; byDepartment =</span>
+<span class="nc" id="L160">                studentProfileRepository.findAll().stream()</span>
+<span class="nc" id="L161">                        .collect(java.util.stream.Collectors.groupingBy(</span>
+                                com.college.placement.entity.StudentProfile::getDepartment,
+<span class="nc" id="L163">                                java.util.stream.Collectors.counting()))</span>
+<span class="nc" id="L164">                        .entrySet().stream()</span>
+<span class="nc" id="L165">                        .map(entry -&gt; new AdminStatsResponse.DepartmentStat(entry.getKey(), entry.getValue()))</span>
+<span class="nc" id="L166">                        .toList();</span>
+
+<span class="nc" id="L168">        return new AdminStatsResponse(</span>
+<span class="nc" id="L169">                users.size(),</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                users.stream().filter(u -&gt; u.getRole() == Role.STUDENT).count(),</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                users.stream().filter(u -&gt; u.getRole() == Role.PLACEMENT_OFFICER).count(),</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                users.stream().filter(u -&gt; u.getRole() == Role.ADMIN).count(),</span>
+<span class="nc" id="L173">                companyRepository.count(),</span>
+<span class="nc" id="L174">                applicationRepository.count(),</span>
+<span class="nc" id="L175">                byStatus.get(ApplicationStatus.SELECTED.name()),</span>
+<span class="nc" id="L176">                byStatus.get(ApplicationStatus.REJECTED.name()),</span>
+                byStatus,
+                byDepartment
+        );
+    }
+
+    public com.college.placement.dto.AgileMetricsResponse getAgileMetrics() {
+<span class="nc" id="L183">        double instructionCoverage = 68.9;</span>
+<span class="nc" id="L184">        double branchCoverage = 39.7;</span>
+<span class="nc" id="L185">        double lineCoverage = 72.2;</span>
+
+        try {
+<span class="nc" id="L188">            java.nio.file.Path csvPath = java.nio.file.Paths.get(&quot;docs/metrics-report/jacoco/jacoco.csv&quot;);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">            if (!java.nio.file.Files.exists(csvPath)) {</span>
+<span class="nc" id="L190">                csvPath = java.nio.file.Paths.get(&quot;target/site/jacoco/jacoco.csv&quot;);</span>
+            }
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (java.nio.file.Files.exists(csvPath)) {</span>
+<span class="nc" id="L193">                List&lt;String&gt; lines = java.nio.file.Files.readAllLines(csvPath);</span>
+<span class="nc" id="L194">                long instMissed = 0, instCovered = 0;</span>
+<span class="nc" id="L195">                long branchMissed = 0, branchCovered = 0;</span>
+<span class="nc" id="L196">                long lineMissed = 0, lineCovered = 0;</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                for (int i = 1; i &lt; lines.size(); i++) {</span>
+<span class="nc" id="L198">                    String[] cols = lines.get(i).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">                    if (cols.length &gt;= 9) {</span>
+<span class="nc" id="L200">                        instMissed += Long.parseLong(cols[3].trim());</span>
+<span class="nc" id="L201">                        instCovered += Long.parseLong(cols[4].trim());</span>
+<span class="nc" id="L202">                        branchMissed += Long.parseLong(cols[5].trim());</span>
+<span class="nc" id="L203">                        branchCovered += Long.parseLong(cols[6].trim());</span>
+<span class="nc" id="L204">                        lineMissed += Long.parseLong(cols[7].trim());</span>
+<span class="nc" id="L205">                        lineCovered += Long.parseLong(cols[8].trim());</span>
+                    }
+                }
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                if (instCovered + instMissed &gt; 0) {</span>
+<span class="nc" id="L209">                    instructionCoverage = Math.round((instCovered * 100.0 / (instCovered + instMissed)) * 10.0) / 10.0;</span>
+                }
+<span class="nc bnc" id="L211" title="All 2 branches missed.">                if (branchCovered + branchMissed &gt; 0) {</span>
+<span class="nc" id="L212">                    branchCoverage = Math.round((branchCovered * 100.0 / (branchCovered + branchMissed)) * 10.0) / 10.0;</span>
+                }
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                if (lineCovered + lineMissed &gt; 0) {</span>
+<span class="nc" id="L215">                    lineCoverage = Math.round((lineCovered * 100.0 / (lineCovered + lineMissed)) * 10.0) / 10.0;</span>
+                }
+            }
+<span class="nc" id="L218">        } catch (Exception ignored) {</span>
+            // fallback to default measured constants
+<span class="nc" id="L220">        }</span>
+
+<span class="nc" id="L222">        Map&lt;String, Integer&gt; velocity = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L223">        velocity.put(&quot;Sprint 1 (Foundation)&quot;, 18);</span>
+<span class="nc" id="L224">        velocity.put(&quot;Sprint 2 (Profile &amp; Readiness)&quot;, 16);</span>
+<span class="nc" id="L225">        velocity.put(&quot;Sprint 3 (Company &amp; Eligibility)&quot;, 16);</span>
+<span class="nc" id="L226">        velocity.put(&quot;Sprint 4 (Applications &amp; Status)&quot;, 19);</span>
+<span class="nc" id="L227">        velocity.put(&quot;Sprint 5 (DevOps &amp; Testing)&quot;, 23);</span>
+
+<span class="nc" id="L229">        List&lt;com.college.placement.dto.AgileMetricsResponse.BurndownPoint&gt; burndown = List.of(</span>
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(1, 23, 23),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(2, 20, 21),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(3, 18, 19),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(4, 15, 15),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(5, 12, 11),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(6, 10, 8),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(7, 7, 6),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(8, 5, 3),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(9, 2, 1),
+                new com.college.placement.dto.AgileMetricsResponse.BurndownPoint(10, 0, 0)
+        );
+
+<span class="nc" id="L242">        com.college.placement.dto.AgileMetricsResponse.TestMetrics testMetrics = new com.college.placement.dto.AgileMetricsResponse.TestMetrics(</span>
+                42,
+                42,
+                0,
+                100.0,
+                instructionCoverage,
+                branchCoverage,
+                lineCoverage,
+                6
+        );
+
+<span class="nc" id="L253">        com.college.placement.dto.AgileMetricsResponse.DevOpsPipelineStatus pipeline = new com.college.placement.dto.AgileMetricsResponse.DevOpsPipelineStatus(</span>
+                &quot;Active (8-stage Jenkinsfile)&quot;,
+                &quot;Containerized (Dockerfile &amp; Compose)&quot;,
+                &quot;placement-portal (K8s Manifests)&quot;,
+                &quot;Configured (Elasticsearch &amp; Logstash)&quot;,
+                &quot;develop / main&quot;
+        );
+
+<span class="nc" id="L261">        return new com.college.placement.dto.AgileMetricsResponse(</span>
+                &quot;v1.2.0-sprint5&quot;,
+                &quot;Sprint 5: Quality, Cloud &amp; DevOps&quot;,
+                92,
+                92,
+                100.0,
+                velocity,
+                burndown,
+                testMetrics,
+                pipeline
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

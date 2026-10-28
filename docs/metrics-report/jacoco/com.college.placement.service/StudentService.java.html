@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StudentService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">StudentService.java</span></div><h1>StudentService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.college.placement.dto.CompanyResponse;
+import com.college.placement.dto.EligibilityResponse;
+import com.college.placement.dto.PreparationScoreRequest;
+import com.college.placement.dto.PreparationScoreResponse;
+import com.college.placement.dto.StudentDashboardResponse;
+import com.college.placement.dto.StudentProfileRequest;
+import com.college.placement.dto.StudentProfileResponse;
+import com.college.placement.entity.Company;
+import com.college.placement.entity.PreparationScore;
+import com.college.placement.entity.Skill;
+import com.college.placement.entity.StudentProfile;
+import com.college.placement.entity.StudentSkill;
+import com.college.placement.entity.User;
+import com.college.placement.exception.ResourceNotFoundException;
+import com.college.placement.repository.ApplicationRepository;
+import com.college.placement.repository.CompanyRepository;
+import com.college.placement.repository.PreparationScoreRepository;
+import com.college.placement.repository.SkillRepository;
+import com.college.placement.repository.StudentProfileRepository;
+import com.college.placement.repository.StudentSkillRepository;
+import com.college.placement.security.CurrentUser;
+
+/**
+ * Everything a student manages about themselves: profile, skills,
+ * preparation scores and the dashboard.
+ */
+@Service
+public class StudentService {
+
+    private final StudentProfileRepository studentProfileRepository;
+    private final PreparationScoreRepository preparationScoreRepository;
+    private final SkillRepository skillRepository;
+    private final StudentSkillRepository studentSkillRepository;
+    private final ApplicationRepository applicationRepository;
+    private final CompanyRepository companyRepository;
+    private final CurrentUser currentUser;
+    private final ApplicationService applicationService;
+    private final EligibilityService eligibilityService;
+
+    public StudentService(StudentProfileRepository studentProfileRepository,
+                          PreparationScoreRepository preparationScoreRepository,
+                          SkillRepository skillRepository,
+                          StudentSkillRepository studentSkillRepository,
+                          ApplicationRepository applicationRepository,
+                          CompanyRepository companyRepository,
+                          CurrentUser currentUser,
+                          ApplicationService applicationService,
+<span class="fc" id="L62">                          EligibilityService eligibilityService) {</span>
+<span class="fc" id="L63">        this.studentProfileRepository = studentProfileRepository;</span>
+<span class="fc" id="L64">        this.preparationScoreRepository = preparationScoreRepository;</span>
+<span class="fc" id="L65">        this.skillRepository = skillRepository;</span>
+<span class="fc" id="L66">        this.studentSkillRepository = studentSkillRepository;</span>
+<span class="fc" id="L67">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L68">        this.companyRepository = companyRepository;</span>
+<span class="fc" id="L69">        this.currentUser = currentUser;</span>
+<span class="fc" id="L70">        this.applicationService = applicationService;</span>
+<span class="fc" id="L71">        this.eligibilityService = eligibilityService;</span>
+<span class="fc" id="L72">    }</span>
+
+    // ---------- Profile ----------
+
+    public StudentProfileResponse getMyProfile() {
+<span class="nc" id="L77">        StudentProfile profile = findMyProfile();</span>
+<span class="nc" id="L78">        return StudentProfileResponse.from(profile, getSkillNames(profile));</span>
+    }
+
+    /** Creates the profile on first save so the student needs no extra setup step. */
+    @Transactional
+    public StudentProfileResponse saveMyProfile(StudentProfileRequest request) {
+<span class="fc" id="L84">        User user = currentUser.get();</span>
+<span class="fc" id="L85">        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())</span>
+<span class="fc" id="L86">                .orElseGet(() -&gt; {</span>
+<span class="fc" id="L87">                    StudentProfile created = new StudentProfile();</span>
+<span class="fc" id="L88">                    created.setUser(user);</span>
+<span class="fc" id="L89">                    return created;</span>
+                });
+
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (profile.getRegistrationNumber() == null</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                || !profile.getRegistrationNumber().equals(request.registrationNumber())) {</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (studentProfileRepository.existsByRegistrationNumber(request.registrationNumber())) {</span>
+<span class="nc" id="L95">                throw new com.college.placement.exception.BusinessException(</span>
+                        &quot;Registration number is already used by another student&quot;);
+            }
+        }
+
+<span class="fc" id="L100">        profile.setRegistrationNumber(request.registrationNumber());</span>
+<span class="fc" id="L101">        profile.setPhone(request.phone());</span>
+<span class="fc" id="L102">        profile.setDepartment(request.department());</span>
+<span class="fc" id="L103">        profile.setProgram(request.program());</span>
+<span class="fc" id="L104">        profile.setGraduationYear(request.graduationYear());</span>
+<span class="fc" id="L105">        profile.setCgpa(request.cgpa());</span>
+<span class="fc" id="L106">        profile.setCertifications(request.certifications());</span>
+<span class="fc" id="L107">        profile.setProjects(request.projects());</span>
+<span class="fc" id="L108">        profile.setInternshipExperience(request.internshipExperience());</span>
+<span class="fc" id="L109">        profile.setExtracurricularActivities(request.extracurricularActivities());</span>
+<span class="fc" id="L110">        profile.setResumeSummary(request.resumeSummary());</span>
+
+<span class="fc" id="L112">        StudentProfile saved = studentProfileRepository.save(profile);</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        replaceSkills(saved, request.skills() == null ? List.of() : request.skills());</span>
+<span class="fc" id="L114">        return StudentProfileResponse.from(saved, getSkillNames(saved));</span>
+    }
+
+    // ---------- Preparation scores ----------
+
+    public PreparationScoreResponse getMyPreparation() {
+<span class="nc" id="L120">        return preparationScoreRepository.findByStudentUserId(currentUserId())</span>
+<span class="nc" id="L121">                .map(PreparationScoreResponse::from)</span>
+<span class="nc" id="L122">                .orElse(PreparationScoreResponse.empty());</span>
+    }
+
+    @Transactional
+    public PreparationScoreResponse saveMyPreparation(PreparationScoreRequest request) {
+<span class="fc" id="L127">        StudentProfile profile = findMyProfile();</span>
+<span class="fc" id="L128">        PreparationScore score = preparationScoreRepository.findByStudentUserId(currentUserId())</span>
+<span class="fc" id="L129">                .orElseGet(() -&gt; new PreparationScore());</span>
+<span class="fc" id="L130">        score.setStudent(profile);</span>
+<span class="fc" id="L131">        score.setAptitude(request.aptitude());</span>
+<span class="fc" id="L132">        score.setCoding(request.coding());</span>
+<span class="fc" id="L133">        score.setTechnical(request.technical());</span>
+<span class="fc" id="L134">        score.setProjects(request.projects());</span>
+<span class="fc" id="L135">        score.setCommunication(request.communication());</span>
+<span class="fc" id="L136">        return PreparationScoreResponse.from(preparationScoreRepository.save(score));</span>
+    }
+
+    // ---------- Dashboard ----------
+
+    @Transactional(readOnly = true)
+    public StudentDashboardResponse getMyDashboard() {
+<span class="nc" id="L143">        StudentProfile profile = findMyProfile();</span>
+<span class="nc" id="L144">        List&lt;com.college.placement.entity.Application&gt; applications =</span>
+<span class="nc" id="L145">                applicationRepository.findByStudentUserIdOrderByAppliedAtDesc(currentUserId());</span>
+
+<span class="nc" id="L147">        long selected = applications.stream()</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                .filter(application -&gt; application.getStatus()</span>
+                        == com.college.placement.entity.ApplicationStatus.SELECTED)
+<span class="nc" id="L150">                .count();</span>
+
+<span class="nc" id="L152">        List&lt;Company&gt; deadlines = companyRepository</span>
+<span class="nc" id="L153">                .findByApplicationDeadlineAfterOrderByApplicationDeadlineAsc(java.time.LocalDate.now().minusDays(1))</span>
+<span class="nc" id="L154">                .stream()</span>
+<span class="nc" id="L155">                .limit(5)</span>
+<span class="nc" id="L156">                .toList();</span>
+
+<span class="nc" id="L158">        return new StudentDashboardResponse(</span>
+<span class="nc" id="L159">                StudentProfileResponse.from(profile, getSkillNames(profile)),</span>
+<span class="nc" id="L160">                getMyPreparation(),</span>
+<span class="nc" id="L161">                applications.size(),</span>
+                selected,
+<span class="nc" id="L163">                applications.stream().map(com.college.placement.dto.ApplicationResponse::from).limit(5).toList(),</span>
+<span class="nc" id="L164">                deadlines.stream().map(com.college.placement.dto.CompanyResponse::from).toList()</span>
+        );
+    }
+
+    // ---------- Job Recommendations ----------
+
+    /**
+     * Returns a list of recommended companies for the current student, sorted by suitability.
+     * Eligibility is checked (CGPA, graduation year, department, skills).
+     * Sorting is primarily by package CTC (descending), then by skill match (descending),
+     * with companies having no skill requirements considered best match.
+     *
+     * @return list of recommended companies (most recommended first)
+     */
+    @Transactional(readOnly = true)
+    public List&lt;CompanyResponse&gt; getRecommendedJobs() {
+<span class="nc" id="L180">        StudentProfile student = findMyProfile();</span>
+<span class="nc" id="L181">        LocalDate cutoffDate = LocalDate.now().minusDays(1); // include today and future</span>
+<span class="nc" id="L182">        List&lt;Company&gt; allCompanies = companyRepository.findByApplicationDeadlineAfterOrderByApplicationDeadlineAsc(cutoffDate);</span>
+
+<span class="nc" id="L184">        List&lt;Company&gt; eligibleCompanies = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        for (Company company : allCompanies) {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            if (eligibilityService.check(student, company).eligible()) {</span>
+<span class="nc" id="L187">                eligibleCompanies.add(company);</span>
+            }
+<span class="nc" id="L189">        }</span>
+
+        // Precompute student skills once (lowercase for case-insensitive comparison)
+<span class="nc" id="L192">        List&lt;String&gt; studentSkills = studentSkillRepository.findByStudent(student).stream()</span>
+<span class="nc" id="L193">                .map(studentSkill -&gt; studentSkill.getSkill().getName().toLowerCase(Locale.ROOT))</span>
+<span class="nc" id="L194">                .toList();</span>
+
+        // Build list of company with match score
+<span class="nc" id="L197">        List&lt;CompanyMatch&gt; matches = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        for (Company company : eligibleCompanies) {</span>
+            int matchCount;
+<span class="nc" id="L200">            boolean noSkillReq = false;</span>
+<span class="nc" id="L201">            String requiredSkillsStr = company.getRequiredSkills();</span>
+<span class="nc bnc" id="L202" title="All 4 branches missed.">            if (requiredSkillsStr == null || requiredSkillsStr.isBlank()) {</span>
+<span class="nc" id="L203">                noSkillReq = true;</span>
+<span class="nc" id="L204">                matchCount = Integer.MAX_VALUE; // treat as best possible skill match</span>
+            } else {
+<span class="nc" id="L206">                List&lt;String&gt; requiredSkills = Arrays.stream(requiredSkillsStr.split(&quot;,&quot;))</span>
+<span class="nc" id="L207">                        .map(String::trim)</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                        .filter(token -&gt; !token.isEmpty())</span>
+<span class="nc" id="L209">                        .map(token -&gt; token.toLowerCase(Locale.ROOT))</span>
+<span class="nc" id="L210">                        .toList();</span>
+<span class="nc" id="L211">                matchCount = (int) requiredSkills.stream()</span>
+<span class="nc" id="L212">                        .filter(studentSkills::contains)</span>
+<span class="nc" id="L213">                        .count();</span>
+            }
+<span class="nc" id="L215">            matches.add(new CompanyMatch(company, matchCount, noSkillReq));</span>
+<span class="nc" id="L216">        }</span>
+
+        // Sort by package CTC descending, then by match count descending (noSkillReq already has MAX_VALUE)
+<span class="nc" id="L219">        matches.sort(Comparator</span>
+<span class="nc" id="L220">                .comparing((CompanyMatch cm) -&gt; cm.company.getPackageCtc(),</span>
+<span class="nc" id="L221">                        Comparator.nullsLast(Comparator.reverseOrder()))</span>
+<span class="nc" id="L222">                .thenComparing(Comparator.comparingInt((CompanyMatch cm) -&gt; cm.matchCount).reversed()));</span>
+
+        // Convert to DTOs
+<span class="nc" id="L225">        return matches.stream()</span>
+<span class="nc" id="L226">                .map(m -&gt; CompanyResponse.from(m.company))</span>
+<span class="nc" id="L227">                .toList();</span>
+    }
+
+    /** Lets a student see the exact criteria for a vacancy before applying. */
+    public EligibilityResponse checkMyEligibility(Long companyId) {
+<span class="nc" id="L232">        StudentProfile student = findMyProfile();</span>
+<span class="nc" id="L233">        Company company = companyRepository.findById(companyId)</span>
+<span class="nc" id="L234">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Company not found with id &quot; + companyId));</span>
+<span class="nc" id="L235">        return eligibilityService.check(student, company);</span>
+    }
+
+    // ---------- Helpers ----------
+
+    private StudentProfile findMyProfile() {
+<span class="fc" id="L241">        Long userId = currentUserId();</span>
+<span class="fc" id="L242">        return studentProfileRepository.findByUserId(userId)</span>
+<span class="pc" id="L243">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Profile not found yet. Save your profile first.&quot;));
+    }
+
+    private Long currentUserId() {
+<span class="fc" id="L248">        return currentUser.get().getId();</span>
+    }
+
+    private List&lt;String&gt; getSkillNames(StudentProfile profile) {
+<span class="fc" id="L252">        return studentSkillRepository.findByStudent(profile).stream()</span>
+<span class="fc" id="L253">                .map(studentSkill -&gt; studentSkill.getSkill().getName())</span>
+<span class="fc" id="L254">                .toList();</span>
+    }
+
+    /** Replaces the student's skills with the given names, reusing the skill catalog. */
+    private void replaceSkills(StudentProfile profile, List&lt;String&gt; skillNames) {
+<span class="fc" id="L259">        studentSkillRepository.deleteByStudent(profile);</span>
+<span class="fc" id="L260">        studentSkillRepository.flush();</span>
+<span class="fc" id="L261">        Map&lt;String, String&gt; uniqueSkills = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">        for (String name : skillNames) {</span>
+<span class="pc bpc" id="L263" title="2 of 4 branches missed.">            if (name != null &amp;&amp; !name.isBlank()) {</span>
+<span class="fc" id="L264">                String trimmed = name.trim();</span>
+<span class="fc" id="L265">                uniqueSkills.putIfAbsent(trimmed.toLowerCase(Locale.ROOT), trimmed);</span>
+            }
+<span class="fc" id="L267">        }</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">        for (String trimmed : uniqueSkills.values()) {</span>
+<span class="fc" id="L269">            Skill skill = skillRepository.findByNameIgnoreCase(trimmed)</span>
+<span class="pc" id="L270">                    .orElseGet(() -&gt; skillRepository.save(new Skill(trimmed)));</span>
+<span class="fc" id="L271">            studentSkillRepository.save(new StudentSkill(profile, skill));</span>
+<span class="fc" id="L272">        }</span>
+<span class="fc" id="L273">    }</span>
+
+    /** Helper class to hold company and its skill match count for sorting. */
+    private static class CompanyMatch {
+        final Company company;
+        final int matchCount; // higher is better
+        final boolean noSkillReq; // true if company has no skill requirements
+
+<span class="nc" id="L281">        CompanyMatch(Company company, int matchCount, boolean noSkillReq) {</span>
+<span class="nc" id="L282">            this.company = company;</span>
+<span class="nc" id="L283">            this.matchCount = matchCount;</span>
+<span class="nc" id="L284">            this.noSkillReq = noSkillReq;</span>
+<span class="nc" id="L285">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

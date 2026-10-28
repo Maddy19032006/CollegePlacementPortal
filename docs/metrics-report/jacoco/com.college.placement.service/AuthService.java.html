@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">AuthService.java</span></div><h1>AuthService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.college.placement.dto.LoginRequest;
+import com.college.placement.dto.RegisterRequest;
+import com.college.placement.dto.UserResponse;
+import com.college.placement.entity.Role;
+import com.college.placement.entity.User;
+import com.college.placement.exception.BusinessException;
+import com.college.placement.repository.UserRepository;
+import com.college.placement.security.CurrentUser;
+
+/**
+ * Registration and login. After login the user is authenticated in the HTTP
+ * session, so subsequent requests carry the JSESSIONID cookie.
+ */
+@Service
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final CurrentUser currentUser;
+
+<span class="fc" id="L30">    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, CurrentUser currentUser) {</span>
+<span class="fc" id="L31">        this.userRepository = userRepository;</span>
+<span class="fc" id="L32">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L33">        this.currentUser = currentUser;</span>
+<span class="fc" id="L34">    }</span>
+
+    @Transactional
+    public UserResponse register(RegisterRequest request) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (userRepository.existsByUsername(request.username())) {</span>
+<span class="fc" id="L39">            throw new BusinessException(&quot;Username is already taken&quot;);</span>
+        }
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (userRepository.existsByEmail(request.email())) {</span>
+<span class="nc" id="L42">            throw new BusinessException(&quot;Email is already taken!&quot;);</span>
+        }
+
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (request.role() == Role.STUDENT) {</span>
+<span class="pc bpc" id="L46" title="2 of 4 branches missed.">            if (request.studentId() == null || request.studentId().isBlank()) {</span>
+<span class="nc" id="L47">                throw new BusinessException(&quot;Student ID / Roll Number is required for students&quot;);</span>
+            }
+<span class="pc bpc" id="L49" title="2 of 4 branches missed.">            if (request.department() == null || request.department().isBlank()) {</span>
+<span class="nc" id="L50">                throw new BusinessException(&quot;Department is required for students&quot;);</span>
+            }
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">            if (request.degree() == null || request.degree().isBlank()) {</span>
+<span class="nc" id="L53">                throw new BusinessException(&quot;Degree is required for students&quot;);</span>
+            }
+        }
+        // Public registration allows student and officer accounts. Admin must never be selectable.
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (request.role() == Role.ADMIN) {</span>
+<span class="nc" id="L58">            throw new BusinessException(&quot;Admin accounts cannot be created through public registration&quot;);</span>
+        }
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (request.role() == Role.PLACEMENT_OFFICER) {</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">            if (request.employeeId() == null || request.employeeId().isBlank()) {</span>
+<span class="fc" id="L63">                throw new BusinessException(&quot;Employee ID is required for placement officers&quot;);</span>
+            }
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">            if (request.department() == null || request.department().isBlank()) {</span>
+<span class="nc" id="L66">                throw new BusinessException(&quot;Department is required for placement officers&quot;);</span>
+            }
+<span class="pc bpc" id="L68" title="2 of 4 branches missed.">            if (request.companyName() == null || request.companyName().isBlank()) {</span>
+<span class="nc" id="L69">                throw new BusinessException(&quot;Company Name is required for placement officers&quot;);</span>
+            }
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">            if (request.designation() == null || request.designation().isBlank()) {</span>
+<span class="nc" id="L72">                throw new BusinessException(&quot;Designation is required for placement officers&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L76">        User user = new User(</span>
+<span class="fc" id="L77">                request.username(),</span>
+<span class="fc" id="L78">                request.email(),</span>
+<span class="fc" id="L79">                passwordEncoder.encode(request.password()),</span>
+<span class="fc" id="L80">                request.fullName(),</span>
+<span class="fc" id="L81">                request.role()</span>
+        );
+        
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (request.role() == Role.PLACEMENT_OFFICER) {</span>
+<span class="fc" id="L85">            user.setEmployeeId(request.employeeId());</span>
+<span class="fc" id="L86">            user.setDepartment(request.department());</span>
+<span class="fc" id="L87">            user.setCompanyName(request.companyName());</span>
+<span class="fc" id="L88">            user.setDesignation(request.designation());</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        } else if (request.role() == Role.STUDENT) {</span>
+<span class="fc" id="L90">            user.setStudentId(request.studentId());</span>
+<span class="fc" id="L91">            user.setDepartment(request.department());</span>
+<span class="fc" id="L92">            user.setDegree(request.degree());</span>
+        }
+        
+<span class="fc" id="L95">        return UserResponse.from(userRepository.save(user));</span>
+    }
+
+    /** Verifies credentials and stores the authentication in the security context. */
+    public UserResponse login(LoginRequest request) {
+<span class="fc" id="L100">        User user = userRepository.findByUsername(request.username())</span>
+<span class="pc" id="L101">                .orElseThrow(() -&gt; new BusinessException(org.springframework.http.HttpStatus.UNAUTHORIZED,</span>
+                        &quot;Invalid username or password&quot;));
+
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (user.isRemoved()) {</span>
+<span class="fc" id="L105">            throw new BusinessException(org.springframework.http.HttpStatus.FORBIDDEN,</span>
+                &quot;Your account has been removed by an administrator. Please contact the administrator.&quot;);
+        }
+
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (!passwordEncoder.matches(request.password(), user.getPassword())) {</span>
+<span class="nc" id="L110">            throw new BusinessException(org.springframework.http.HttpStatus.UNAUTHORIZED,</span>
+                    &quot;Invalid username or password&quot;);
+        }
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        if (request.role() != null &amp;&amp; user.getRole() != request.role()) {</span>
+<span class="nc" id="L114">            throw new BusinessException(org.springframework.http.HttpStatus.FORBIDDEN,</span>
+                    &quot;Invalid gateway for your account role. Please use the correct login portal.&quot;);
+        }
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (!user.isEnabled()) {</span>
+<span class="nc" id="L118">            throw new BusinessException(org.springframework.http.HttpStatus.FORBIDDEN,</span>
+                    &quot;Your account has been disabled. Contact the administrator.&quot;);
+        }
+
+<span class="nc" id="L122">        Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(</span>
+<span class="nc" id="L123">                user.getUsername(), null,</span>
+<span class="nc" id="L124">                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority(</span>
+<span class="nc" id="L125">                        &quot;ROLE_&quot; + user.getRole().name())));</span>
+<span class="nc" id="L126">        SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+
+<span class="nc" id="L128">        return UserResponse.from(user);</span>
+    }
+
+    /** Returns the currently logged-in user. */
+    public UserResponse me() {
+<span class="nc" id="L133">        return UserResponse.from(currentUser.get());</span>
+    }
+
+    /** Clears the security context to log the user out. */
+    @Transactional
+    public void logout() {
+<span class="nc" id="L139">        SecurityContextHolder.clearContext();</span>
+<span class="nc" id="L140">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

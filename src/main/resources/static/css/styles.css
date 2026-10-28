@@ -82,3 +82,48 @@ a { color:var(--primary); }
 .alert { border:0; border-radius:10px; box-shadow:0 6px 18px rgba(32,46,83,.08); }
 @media (max-width:991px) { .app-navbar .navbar-nav { padding:.7rem 0; align-items:stretch !important; } .app-navbar .nav-link { padding:.6rem .7rem !important; } .hero { padding-top:2rem; } .hero-panel { margin-top:2rem; } }
 @media (max-width:575px) { .app-navbar { margin-bottom:1.35rem; } .card-body { padding:1.05rem; } .hero h1 { font-size:2.55rem; } .auth-card .card-body { padding:1.4rem; } }
+
+/* Agile ALM & DevOps Telemetry Styles (ISWE406) */
+.telemetry-card {
+    border-top: 3px solid var(--primary);
+    background: #ffffff;
+}
+.telemetry-badge {
+    background: #eef2ff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    display: inline-block;
+}
+.burndown-chart-wrapper {
+    background: #fafbfe;
+    border: 1px solid #e7eaf2;
+    border-radius: 12px;
+    padding: 1rem;
+}
+.metric-pill {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+}
+.metric-pill-success {
+    background: #dcfce7;
+    color: #15803d;
+}
+.metric-pill-info {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+.velocity-row {
+    margin-bottom: 0.85rem;
+}
+.velocity-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}

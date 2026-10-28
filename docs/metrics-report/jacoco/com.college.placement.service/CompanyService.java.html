@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompanyService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">CompanyService.java</span></div><h1>CompanyService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import com.college.placement.dto.CompanyRequest;
+import com.college.placement.dto.CompanyResponse;
+import com.college.placement.entity.Company;
+import com.college.placement.exception.BusinessException;
+import com.college.placement.exception.ResourceNotFoundException;
+import com.college.placement.repository.ApplicationRepository;
+import com.college.placement.repository.CompanyRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Company CRUD plus search/filter for students.
+ */
+@Service
+public class CompanyService {
+
+    private final CompanyRepository companyRepository;
+    private final ApplicationRepository applicationRepository;
+
+<span class="fc" id="L27">    public CompanyService(CompanyRepository companyRepository, ApplicationRepository applicationRepository) {</span>
+<span class="fc" id="L28">        this.companyRepository = companyRepository;</span>
+<span class="fc" id="L29">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L30">    }</span>
+
+    /** Search by name and/or filter by eligible department; results sorted by deadline. */
+    public List&lt;CompanyResponse&gt; search(String name, String department) {
+<span class="nc" id="L34">        Specification&lt;Company&gt; spec = (root, query, builder) -&gt; builder.conjunction();</span>
+
+<span class="nc bnc" id="L36" title="All 4 branches missed.">        if (name != null &amp;&amp; !name.isBlank()) {</span>
+<span class="nc" id="L37">            spec = spec.and((root, query, builder) -&gt;</span>
+<span class="nc" id="L38">                    builder.like(builder.lower(root.get(&quot;name&quot;)), &quot;%&quot; + name.toLowerCase() + &quot;%&quot;));</span>
+        }
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        if (department != null &amp;&amp; !department.isBlank()) {</span>
+<span class="nc" id="L41">            spec = spec.and((root, query, builder) -&gt;</span>
+<span class="nc" id="L42">                    builder.like(builder.lower(root.get(&quot;requiredDepartments&quot;)),</span>
+<span class="nc" id="L43">                            &quot;%&quot; + department.toLowerCase() + &quot;%&quot;));</span>
+        }
+
+<span class="nc" id="L46">        return companyRepository.findAll(spec, Sort.by(Sort.Direction.ASC, &quot;applicationDeadline&quot;)).stream()</span>
+<span class="nc" id="L47">                .map(CompanyResponse::from)</span>
+<span class="nc" id="L48">                .toList();</span>
+    }
+
+    public CompanyResponse getById(Long id) {
+<span class="nc" id="L52">        return CompanyResponse.from(findEntity(id));</span>
+    }
+
+    public List&lt;CompanyResponse&gt; getUpcomingDeadlines(int days) {
+<span class="nc" id="L56">        LocalDate limit = LocalDate.now().plusDays(days);</span>
+<span class="nc" id="L57">        return companyRepository</span>
+<span class="nc" id="L58">                .findByApplicationDeadlineAfterOrderByApplicationDeadlineAsc(LocalDate.now().minusDays(1)).stream()</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                .filter(company -&gt; !company.getApplicationDeadline().isAfter(limit))</span>
+<span class="nc" id="L60">                .map(CompanyResponse::from)</span>
+<span class="nc" id="L61">                .toList();</span>
+    }
+
+    @Transactional
+    public CompanyResponse create(CompanyRequest request) {
+<span class="fc" id="L66">        validate(request, null);</span>
+<span class="fc" id="L67">        Company company = new Company();</span>
+<span class="fc" id="L68">        applyRequest(company, request);</span>
+<span class="fc" id="L69">        return CompanyResponse.from(companyRepository.save(company));</span>
+    }
+
+    @Transactional
+    public CompanyResponse update(Long id, CompanyRequest request) {
+<span class="fc" id="L74">        Company company = findEntity(id);</span>
+<span class="fc" id="L75">        validate(request, company);</span>
+<span class="fc" id="L76">        applyRequest(company, request);</span>
+<span class="fc" id="L77">        return CompanyResponse.from(companyRepository.save(company));</span>
+    }
+
+    @Transactional
+    public void delete(Long id) {
+<span class="fc" id="L82">        Company company = findEntity(id);</span>
+<span class="fc" id="L83">        long applications = applicationRepository.countByCompanyId(id);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (applications &gt; 0) {</span>
+<span class="fc" id="L85">            throw new BusinessException(</span>
+                    &quot;Cannot delete a company that has &quot; + applications + &quot; application(s). Close it instead.&quot;);
+        }
+<span class="fc" id="L88">        companyRepository.delete(company);</span>
+<span class="fc" id="L89">    }</span>
+
+    private Company findEntity(Long id) {
+<span class="fc" id="L92">        return companyRepository.findById(id)</span>
+<span class="pc" id="L93">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Company not found with id &quot; + id));</span>
+    }
+
+    /** Shared validation for create and update. */
+    private void validate(CompanyRequest request, Company existing) {
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (request.applicationDeadline().isBefore(LocalDate.now())) {</span>
+<span class="fc" id="L99">            throw new BusinessException(&quot;Application deadline must be today or in the future&quot;);</span>
+        }
+<span class="pc bpc" id="L101" title="1 of 4 branches missed.">        if (existing == null &amp;&amp; request.applicationDeadline().isBefore(LocalDate.now())) {</span>
+<span class="nc" id="L102">            throw new BusinessException(&quot;Application deadline must be in the future for a new company&quot;);</span>
+        }
+<span class="pc bpc" id="L104" title="1 of 4 branches missed.">        if (request.minGraduationYear() != null &amp;&amp; (request.minGraduationYear() &lt; 2024</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">                || request.minGraduationYear() &gt; 2035)) {</span>
+<span class="fc" id="L106">            throw new BusinessException(&quot;Minimum graduation year must be between 2024 and 2035&quot;);</span>
+        }
+<span class="fc" id="L108">    }</span>
+
+    private void applyRequest(Company company, CompanyRequest request) {
+<span class="fc" id="L111">        company.setName(request.name().trim());</span>
+<span class="fc" id="L112">        company.setJobRole(request.jobRole().trim());</span>
+<span class="fc" id="L113">        company.setPackageCtc(request.packageCtc());</span>
+<span class="fc" id="L114">        company.setMinCgpa(request.minCgpa());</span>
+<span class="fc" id="L115">        company.setRequiredDepartments(request.requiredDepartments());</span>
+<span class="fc" id="L116">        company.setRequiredSkills(request.requiredSkills());</span>
+<span class="fc" id="L117">        company.setMinGraduationYear(request.minGraduationYear());</span>
+<span class="fc" id="L118">        company.setApplicationDeadline(request.applicationDeadline());</span>
+<span class="fc" id="L119">        company.setDescription(request.description());</span>
+<span class="fc" id="L120">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

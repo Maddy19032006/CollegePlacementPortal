@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreparationScore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.entity</a> &gt; <span class="el_source">PreparationScore.java</span></div><h1>PreparationScore.java</h1><pre class="source lang-java linenums">package com.college.placement.entity;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+/**
+ * Preparation scores of a student (0-100 each). One-to-one with StudentProfile.
+ */
+@Entity
+@Table(name = &quot;preparation_scores&quot;,
+        uniqueConstraints = @UniqueConstraint(name = &quot;uq_preparation_student&quot;, columnNames = &quot;student_id&quot;))
+public class PreparationScore {
+
+    public static final int WEIGHT_APTITUDE = 20;
+    public static final int WEIGHT_CODING = 30;
+    public static final int WEIGHT_TECHNICAL = 20;
+    public static final int WEIGHT_PROJECTS = 20;
+    public static final int WEIGHT_COMMUNICATION = 10;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;student_id&quot;, nullable = false)
+    private StudentProfile student;
+
+<span class="fc" id="L30">    @NotNull</span>
+    @Min(0)
+    @Max(100)
+<span class="fc" id="L33">    private Integer aptitude = 0;</span>
+
+<span class="fc" id="L35">    @NotNull</span>
+    @Min(0)
+    @Max(100)
+<span class="fc" id="L38">    private Integer coding = 0;</span>
+
+<span class="fc" id="L40">    @NotNull</span>
+    @Min(0)
+    @Max(100)
+<span class="fc" id="L43">    private Integer technical = 0;</span>
+
+<span class="fc" id="L45">    @NotNull</span>
+    @Min(0)
+    @Max(100)
+<span class="fc" id="L48">    private Integer projects = 0;</span>
+
+<span class="fc" id="L50">    @NotNull</span>
+    @Min(0)
+    @Max(100)
+<span class="fc" id="L53">    private Integer communication = 0;</span>
+
+<span class="fc" id="L55">    public PreparationScore() {</span>
+<span class="fc" id="L56">    }</span>
+
+<span class="fc" id="L58">    public PreparationScore(StudentProfile student, int aptitude, int coding, int technical, int projects, int communication) {</span>
+<span class="fc" id="L59">        this.student = student;</span>
+<span class="fc" id="L60">        this.aptitude = aptitude;</span>
+<span class="fc" id="L61">        this.coding = coding;</span>
+<span class="fc" id="L62">        this.technical = technical;</span>
+<span class="fc" id="L63">        this.projects = projects;</span>
+<span class="fc" id="L64">        this.communication = communication;</span>
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * Readiness score = aptitude*0.20 + coding*0.30 + technical*0.20 + projects*0.20 + communication*0.10
+     */
+    public double getReadinessScore() {
+<span class="fc" id="L71">        return aptitude * 0.20</span>
+<span class="fc" id="L72">                + coding * 0.30</span>
+<span class="fc" id="L73">                + technical * 0.20</span>
+<span class="fc" id="L74">                + projects * 0.20</span>
+<span class="fc" id="L75">                + communication * 0.10;</span>
+    }
+
+    public Long getId() {
+<span class="nc" id="L79">        return id;</span>
+    }
+
+    public StudentProfile getStudent() {
+<span class="nc" id="L83">        return student;</span>
+    }
+
+    public void setStudent(StudentProfile student) {
+<span class="fc" id="L87">        this.student = student;</span>
+<span class="fc" id="L88">    }</span>
+
+    public Integer getAptitude() {
+<span class="fc" id="L91">        return aptitude;</span>
+    }
+
+    public void setAptitude(Integer aptitude) {
+<span class="fc" id="L95">        this.aptitude = aptitude;</span>
+<span class="fc" id="L96">    }</span>
+
+    public Integer getCoding() {
+<span class="fc" id="L99">        return coding;</span>
+    }
+
+    public void setCoding(Integer coding) {
+<span class="fc" id="L103">        this.coding = coding;</span>
+<span class="fc" id="L104">    }</span>
+
+    public Integer getTechnical() {
+<span class="fc" id="L107">        return technical;</span>
+    }
+
+    public void setTechnical(Integer technical) {
+<span class="fc" id="L111">        this.technical = technical;</span>
+<span class="fc" id="L112">    }</span>
+
+    public Integer getProjects() {
+<span class="fc" id="L115">        return projects;</span>
+    }
+
+    public void setProjects(Integer projects) {
+<span class="fc" id="L119">        this.projects = projects;</span>
+<span class="fc" id="L120">    }</span>
+
+    public Integer getCommunication() {
+<span class="fc" id="L123">        return communication;</span>
+    }
+
+    public void setCommunication(Integer communication) {
+<span class="fc" id="L127">        this.communication = communication;</span>
+<span class="fc" id="L128">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

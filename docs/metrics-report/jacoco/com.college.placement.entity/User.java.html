@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.entity</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.college.placement.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+@Entity
+@Table(name = &quot;users&quot;,
+        uniqueConstraints = {
+                @UniqueConstraint(name = &quot;uq_users_username&quot;, columnNames = &quot;username&quot;),
+                @UniqueConstraint(name = &quot;uq_users_email&quot;, columnNames = &quot;email&quot;)
+        })
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Column(nullable = false, length = 50)
+    private String username;
+
+    /** Only the BCrypt hash is stored, never the plain password. */
+    @NotBlank
+    @Column(nullable = false)
+    private String password;
+
+    @NotBlank
+    @Email
+    @Column(nullable = false, length = 100)
+    private String email;
+
+    @NotBlank
+    @Column(name = &quot;full_name&quot;, nullable = false, length = 100)
+    private String fullName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+<span class="fc" id="L51">    @Column(nullable = false)</span>
+    private boolean enabled = true;
+
+<span class="fc" id="L54">    @Column(nullable = false)</span>
+    private boolean removed = false;
+
+<span class="fc" id="L57">    @Column(name = &quot;created_at&quot;, nullable = false, updatable = false)</span>
+<span class="fc" id="L58">    private LocalDateTime createdAt = LocalDateTime.now();</span>
+
+    @Column(name = &quot;employee_id&quot;, length = 50)
+    private String employeeId;
+
+    @Column(name = &quot;department&quot;, length = 100)
+    private String department;
+
+    @Column(name = &quot;company_name&quot;, length = 100)
+    private String companyName;
+
+    @Column(name = &quot;designation&quot;, length = 100)
+    private String designation;
+
+    @Column(name = &quot;student_id&quot;, length = 50)
+    private String studentId;
+
+    @Column(name = &quot;degree&quot;, length = 100)
+    private String degree;
+
+<span class="fc" id="L78">    public User() {</span>
+<span class="fc" id="L79">    }</span>
+
+<span class="fc" id="L81">    public User(String username, String email, String password, String fullName, Role role) {</span>
+<span class="fc" id="L82">        this.username = username;</span>
+<span class="fc" id="L83">        this.email = email;</span>
+<span class="fc" id="L84">        this.password = password;</span>
+<span class="fc" id="L85">        this.fullName = fullName;</span>
+<span class="fc" id="L86">        this.role = role;</span>
+<span class="fc" id="L87">    }</span>
+
+    public Long getId() {
+<span class="fc" id="L90">        return id;</span>
+    }
+
+    public String getUsername() {
+<span class="fc" id="L94">        return username;</span>
+    }
+
+    public void setUsername(String username) {
+<span class="nc" id="L98">        this.username = username;</span>
+<span class="nc" id="L99">    }</span>
+
+    public String getPassword() {
+<span class="fc" id="L102">        return password;</span>
+    }
+
+    public void setPassword(String password) {
+<span class="nc" id="L106">        this.password = password;</span>
+<span class="nc" id="L107">    }</span>
+
+    public String getEmail() {
+<span class="fc" id="L110">        return email;</span>
+    }
+
+    public void setEmail(String email) {
+<span class="nc" id="L114">        this.email = email;</span>
+<span class="nc" id="L115">    }</span>
+
+    public String getFullName() {
+<span class="fc" id="L118">        return fullName;</span>
+    }
+
+    public void setFullName(String fullName) {
+<span class="nc" id="L122">        this.fullName = fullName;</span>
+<span class="nc" id="L123">    }</span>
+
+    public Role getRole() {
+<span class="fc" id="L126">        return role;</span>
+    }
+
+    public void setRole(Role role) {
+<span class="nc" id="L130">        this.role = role;</span>
+<span class="nc" id="L131">    }</span>
+
+    public boolean isEnabled() {
+<span class="fc" id="L134">        return enabled;</span>
+    }
+
+    public void setEnabled(boolean enabled) {
+<span class="fc" id="L138">        this.enabled = enabled;</span>
+<span class="fc" id="L139">    }</span>
+
+    public boolean isRemoved() {
+<span class="fc" id="L142">        return removed;</span>
+    }
+
+    public void setRemoved(boolean removed) {
+<span class="fc" id="L146">        this.removed = removed;</span>
+<span class="fc" id="L147">    }</span>
+
+    public LocalDateTime getCreatedAt() {
+<span class="fc" id="L150">        return createdAt;</span>
+    }
+
+    public String getEmployeeId() {
+<span class="fc" id="L154">        return employeeId;</span>
+    }
+
+    public void setEmployeeId(String employeeId) {
+<span class="fc" id="L158">        this.employeeId = employeeId;</span>
+<span class="fc" id="L159">    }</span>
+
+    public String getDepartment() {
+<span class="fc" id="L162">        return department;</span>
+    }
+
+    public void setDepartment(String department) {
+<span class="fc" id="L166">        this.department = department;</span>
+<span class="fc" id="L167">    }</span>
+
+    public String getCompanyName() {
+<span class="fc" id="L170">        return companyName;</span>
+    }
+
+    public void setCompanyName(String companyName) {
+<span class="fc" id="L174">        this.companyName = companyName;</span>
+<span class="fc" id="L175">    }</span>
+
+    public String getDesignation() {
+<span class="fc" id="L178">        return designation;</span>
+    }
+
+    public void setDesignation(String designation) {
+<span class="fc" id="L182">        this.designation = designation;</span>
+<span class="fc" id="L183">    }</span>
+
+    public String getStudentId() {
+<span class="fc" id="L186">        return studentId;</span>
+    }
+
+    public void setStudentId(String studentId) {
+<span class="fc" id="L190">        this.studentId = studentId;</span>
+<span class="fc" id="L191">    }</span>
+
+    public String getDegree() {
+<span class="fc" id="L194">        return degree;</span>
+    }
+
+    public void setDegree(String degree) {
+<span class="fc" id="L198">        this.degree = degree;</span>
+<span class="fc" id="L199">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

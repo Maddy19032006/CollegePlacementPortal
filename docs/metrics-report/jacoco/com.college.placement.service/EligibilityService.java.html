@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EligibilityService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">EligibilityService.java</span></div><h1>EligibilityService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import com.college.placement.dto.EligibilityResponse;
+import com.college.placement.entity.Company;
+import com.college.placement.entity.StudentProfile;
+import com.college.placement.repository.StudentProfileRepository;
+import com.college.placement.repository.StudentSkillRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Checks whether a student meets a company's requirements
+ * (CGPA, graduation year, department, skills).
+ */
+@Service
+public class EligibilityService {
+
+    private final StudentSkillRepository studentSkillRepository;
+
+<span class="fc" id="L24">    public EligibilityService(StudentSkillRepository studentSkillRepository) {</span>
+<span class="fc" id="L25">        this.studentSkillRepository = studentSkillRepository;</span>
+<span class="fc" id="L26">    }</span>
+
+    /** Evaluates all criteria and returns them together with an overall verdict. */
+    public EligibilityResponse check(StudentProfile student, Company company) {
+<span class="fc" id="L30">        List&lt;String&gt; failed = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (student.getCgpa().compareTo(company.getMinCgpa()) &lt; 0) {</span>
+<span class="fc" id="L33">            failed.add(&quot;CGPA &quot; + student.getCgpa() + &quot; is below the required &quot; + company.getMinCgpa());</span>
+        }
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (company.getMinGraduationYear() != null</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">                &amp;&amp; student.getGraduationYear() &lt; company.getMinGraduationYear()) {</span>
+<span class="fc" id="L37">            failed.add(&quot;Graduation year &quot; + student.getGraduationYear()</span>
+<span class="fc" id="L38">                    + &quot; is before the required &quot; + company.getMinGraduationYear());</span>
+        }
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">        if (company.getRequiredDepartments() != null &amp;&amp; !company.getRequiredDepartments().isBlank()) {</span>
+<span class="fc" id="L41">            List&lt;String&gt; allowed = split(company.getRequiredDepartments()).stream()</span>
+<span class="fc" id="L42">                    .map(token -&gt; token.toLowerCase(Locale.ROOT))</span>
+<span class="fc" id="L43">                    .toList();</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            if (!allowed.contains(student.getDepartment().toLowerCase(Locale.ROOT))) {</span>
+<span class="fc" id="L45">                failed.add(&quot;Department &quot; + student.getDepartment() + &quot; is not in the allowed list: &quot;</span>
+<span class="fc" id="L46">                        + String.join(&quot;, &quot;, allowed));</span>
+            }
+        }
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">        if (company.getRequiredSkills() != null &amp;&amp; !company.getRequiredSkills().isBlank()) {</span>
+<span class="fc" id="L50">            List&lt;String&gt; requiredSkills = split(company.getRequiredSkills());</span>
+<span class="fc" id="L51">            List&lt;String&gt; studentSkills = studentSkillRepository.findByStudent(student).stream()</span>
+<span class="fc" id="L52">                    .map(studentSkill -&gt; studentSkill.getSkill().getName().toLowerCase(Locale.ROOT))</span>
+<span class="fc" id="L53">                    .toList();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            for (String skill : requiredSkills) {</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                if (!studentSkills.contains(skill.toLowerCase(Locale.ROOT))) {</span>
+<span class="fc" id="L56">                    failed.add(&quot;Missing required skill: &quot; + skill);</span>
+                }
+<span class="fc" id="L58">            }</span>
+        }
+
+<span class="fc" id="L61">        boolean eligible = failed.isEmpty();</span>
+<span class="fc" id="L62">        return new EligibilityResponse(eligible, failed,</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                eligible ? &quot;Student meets all eligibility criteria&quot;</span>
+<span class="fc" id="L64">                        : &quot;Student does not meet &quot; + failed.size() + &quot; eligibility criteria&quot;);</span>
+    }
+
+    /** Splits a comma-separated requirement string into trimmed tokens (case preserved). */
+    private List&lt;String&gt; split(String csv) {
+<span class="fc" id="L69">        return Arrays.stream(csv.split(&quot;,&quot;))</span>
+<span class="fc" id="L70">                .map(String::trim)</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                .filter(token -&gt; !token.isEmpty())</span>
+<span class="fc" id="L72">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

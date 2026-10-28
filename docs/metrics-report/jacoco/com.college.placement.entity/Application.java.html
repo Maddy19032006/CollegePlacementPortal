@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Application.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.entity</a> &gt; <span class="el_source">Application.java</span></div><h1>Application.java</h1><pre class="source lang-java linenums">package com.college.placement.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+/**
+ * A student's application to a company. Unique on (student, company) so a
+ * student can never apply twice to the same company.
+ */
+@Entity
+@Table(name = &quot;applications&quot;,
+        uniqueConstraints = @UniqueConstraint(name = &quot;uq_application_student_company&quot;,
+                columnNames = {&quot;student_id&quot;, &quot;company_id&quot;}),
+        indexes = @Index(name = &quot;idx_application_student&quot;, columnList = &quot;student_id&quot;))
+public class Application {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /** The student who applied. */
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = &quot;student_id&quot;, nullable = false)
+    private StudentProfile student;
+
+    /** The company applied to. */
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = &quot;company_id&quot;, nullable = false)
+    private Company company;
+
+<span class="fc" id="L31">    @Enumerated(EnumType.STRING)</span>
+    @Column(nullable = false, length = 30)
+    private ApplicationStatus status = ApplicationStatus.APPLIED;
+
+<span class="fc" id="L35">    @Column(name = &quot;applied_at&quot;, nullable = false, updatable = false)</span>
+<span class="fc" id="L36">    private LocalDateTime appliedAt = LocalDateTime.now();</span>
+
+<span class="fc" id="L38">    @Column(name = &quot;last_updated_at&quot;)</span>
+<span class="fc" id="L39">    private LocalDateTime lastUpdatedAt = LocalDateTime.now();</span>
+
+<span class="fc" id="L41">    public Application() {</span>
+<span class="fc" id="L42">    }</span>
+
+    public Long getId() {
+<span class="fc" id="L45">        return id;</span>
+    }
+
+    public StudentProfile getStudent() {
+<span class="fc" id="L49">        return student;</span>
+    }
+
+    public void setStudent(StudentProfile student) {
+<span class="fc" id="L53">        this.student = student;</span>
+<span class="fc" id="L54">    }</span>
+
+    public Company getCompany() {
+<span class="fc" id="L57">        return company;</span>
+    }
+
+    public void setCompany(Company company) {
+<span class="fc" id="L61">        this.company = company;</span>
+<span class="fc" id="L62">    }</span>
+
+    public ApplicationStatus getStatus() {
+<span class="fc" id="L65">        return status;</span>
+    }
+
+    public void setStatus(ApplicationStatus status) {
+<span class="fc" id="L69">        this.status = status;</span>
+<span class="fc" id="L70">    }</span>
+
+    public LocalDateTime getAppliedAt() {
+<span class="fc" id="L73">        return appliedAt;</span>
+    }
+
+    public LocalDateTime getLastUpdatedAt() {
+<span class="nc" id="L77">        return lastUpdatedAt;</span>
+    }
+
+    public void setLastUpdatedAt(LocalDateTime lastUpdatedAt) {
+<span class="fc" id="L81">        this.lastUpdatedAt = lastUpdatedAt;</span>
+<span class="fc" id="L82">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

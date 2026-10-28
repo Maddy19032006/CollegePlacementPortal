@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StudentProfile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.entity</a> &gt; <span class="el_source">StudentProfile.java</span></div><h1>StudentProfile.java</h1><pre class="source lang-java linenums">package com.college.placement.entity;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import java.math.BigDecimal;
+
+/**
+ * Placement profile of a student. One-to-one with User.
+ */
+@Entity
+@Table(name = &quot;student_profiles&quot;,
+        uniqueConstraints = {
+                @UniqueConstraint(name = &quot;uq_student_user&quot;, columnNames = &quot;user_id&quot;),
+                @UniqueConstraint(name = &quot;uq_student_reg_number&quot;, columnNames = &quot;registration_number&quot;)
+        })
+public class StudentProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /** Owning side of the one-to-one relation with the login account. */
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = &quot;user_id&quot;, nullable = false)
+    private User user;
+
+    @Column(name = &quot;registration_number&quot;, nullable = false, length = 30)
+    private String registrationNumber;
+
+    @Column(length = 15)
+    private String phone;
+
+    @Column(nullable = false, length = 60)
+    private String department;
+
+    @Column(nullable = false, length = 60)
+    private String program;
+
+    @Column(name = &quot;graduation_year&quot;, nullable = false)
+    private int graduationYear;
+
+    @Column(name = &quot;cgpa&quot;, nullable = false, precision = 4, scale = 2)
+    private BigDecimal cgpa;
+
+    /** Comma-separated text kept simple for this course project. */
+    @Column(length = 500)
+    private String skills;
+
+    @Column(length = 500)
+    private String certifications;
+
+    @Column(length = 1000)
+    private String projects;
+
+    /** Work experience, internships, workshops or industrial training. */
+    @Column(name = &quot;internship_experience&quot;, length = 1500)
+    private String internshipExperience;
+
+    /** Clubs, leadership, volunteering, sports and other extracurricular achievements. */
+    @Column(name = &quot;extracurricular_activities&quot;, length = 1500)
+    private String extracurricularActivities;
+
+    @Column(name = &quot;resume_summary&quot;, length = 1000)
+    private String resumeSummary;
+
+<span class="fc" id="L69">    public StudentProfile() {</span>
+<span class="fc" id="L70">    }</span>
+
+    public Long getId() {
+<span class="nc" id="L73">        return id;</span>
+    }
+
+    public User getUser() {
+<span class="fc" id="L77">        return user;</span>
+    }
+
+    public void setUser(User user) {
+<span class="fc" id="L81">        this.user = user;</span>
+<span class="fc" id="L82">    }</span>
+
+    public String getRegistrationNumber() {
+<span class="fc" id="L85">        return registrationNumber;</span>
+    }
+
+    public void setRegistrationNumber(String registrationNumber) {
+<span class="fc" id="L89">        this.registrationNumber = registrationNumber;</span>
+<span class="fc" id="L90">    }</span>
+
+    public String getPhone() {
+<span class="fc" id="L93">        return phone;</span>
+    }
+
+    public void setPhone(String phone) {
+<span class="fc" id="L97">        this.phone = phone;</span>
+<span class="fc" id="L98">    }</span>
+
+    public String getDepartment() {
+<span class="fc" id="L101">        return department;</span>
+    }
+
+    public void setDepartment(String department) {
+<span class="fc" id="L105">        this.department = department;</span>
+<span class="fc" id="L106">    }</span>
+
+    public String getProgram() {
+<span class="fc" id="L109">        return program;</span>
+    }
+
+    public void setProgram(String program) {
+<span class="fc" id="L113">        this.program = program;</span>
+<span class="fc" id="L114">    }</span>
+
+    public int getGraduationYear() {
+<span class="fc" id="L117">        return graduationYear;</span>
+    }
+
+    public void setGraduationYear(int graduationYear) {
+<span class="fc" id="L121">        this.graduationYear = graduationYear;</span>
+<span class="fc" id="L122">    }</span>
+
+    public BigDecimal getCgpa() {
+<span class="fc" id="L125">        return cgpa;</span>
+    }
+
+    public void setCgpa(BigDecimal cgpa) {
+<span class="fc" id="L129">        this.cgpa = cgpa;</span>
+<span class="fc" id="L130">    }</span>
+
+    public String getSkills() {
+<span class="nc" id="L133">        return skills;</span>
+    }
+
+    public void setSkills(String skills) {
+<span class="nc" id="L137">        this.skills = skills;</span>
+<span class="nc" id="L138">    }</span>
+
+    public String getCertifications() {
+<span class="fc" id="L141">        return certifications;</span>
+    }
+
+    public void setCertifications(String certifications) {
+<span class="fc" id="L145">        this.certifications = certifications;</span>
+<span class="fc" id="L146">    }</span>
+
+    public String getProjects() {
+<span class="fc" id="L149">        return projects;</span>
+    }
+
+    public void setProjects(String projects) {
+<span class="fc" id="L153">        this.projects = projects;</span>
+<span class="fc" id="L154">    }</span>
+
+    public String getInternshipExperience() {
+<span class="fc" id="L157">        return internshipExperience;</span>
+    }
+
+    public void setInternshipExperience(String internshipExperience) {
+<span class="fc" id="L161">        this.internshipExperience = internshipExperience;</span>
+<span class="fc" id="L162">    }</span>
+
+    public String getExtracurricularActivities() {
+<span class="fc" id="L165">        return extracurricularActivities;</span>
+    }
+
+    public void setExtracurricularActivities(String extracurricularActivities) {
+<span class="fc" id="L169">        this.extracurricularActivities = extracurricularActivities;</span>
+<span class="fc" id="L170">    }</span>
+
+    public String getResumeSummary() {
+<span class="fc" id="L173">        return resumeSummary;</span>
+    }
+
+    public void setResumeSummary(String resumeSummary) {
+<span class="fc" id="L177">        this.resumeSummary = resumeSummary;</span>
+<span class="fc" id="L178">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

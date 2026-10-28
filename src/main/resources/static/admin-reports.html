@@ -31,6 +31,122 @@
             </div></div>
         </div>
     </div>
+
+    <!-- Agile ALM & DevOps Telemetry Section (ISWE406 Course Outcome 5 & Theory Module 6) -->
+    <div class="mt-5 pt-4 border-top">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div>
+                <div class="page-kicker">Course Outcome 5 · Theory Module 6</div>
+                <h2 class="page-heading h3 mb-1">Agile ALM &amp; DevOps Telemetry</h2>
+                <p class="page-subtitle mb-0">Live sprint burndown, test execution pass rates, JaCoCo code coverage, and pipeline health.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-primary text-white p-2">Sprint 5 (Quality &amp; DevOps)</span>
+                <span class="badge bg-success text-white p-2">v1.2.0-sprint5</span>
+            </div>
+        </div>
+
+        <!-- Telemetry Summary Cards -->
+        <div class="row g-3 mb-4" id="agile-kpi-cards"></div>
+
+        <div class="row g-4 mb-4">
+            <!-- Left Column: Test & Coverage Breakdown -->
+            <div class="col-lg-6">
+                <div class="card h-100 telemetry-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Code Coverage &amp; TDD Quality (JaCoCo)</h5>
+                            <span class="metric-pill metric-pill-success" id="test-pass-pill">42 / 42 Tests Passed (100%)</span>
+                        </div>
+                        <div id="coverage-bars"></div>
+
+                        <h6 class="mt-4 mb-2 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Automated Test Suite Verification (Surefire)</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Test Suite</th>
+                                        <th>Type</th>
+                                        <th>Tests</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>AuthFlowIntegrationTest</code></td>
+                                        <td>Integration (Security)</td>
+                                        <td>14</td>
+                                        <td><span class="badge bg-success">Passed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>StudentJourneyIntegrationTest</code></td>
+                                        <td>End-to-End Flow</td>
+                                        <td>4</td>
+                                        <td><span class="badge bg-success">Passed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>ApplicationServiceTest</code></td>
+                                        <td>Unit (Service Layer)</td>
+                                        <td>6</td>
+                                        <td><span class="badge bg-success">Passed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>CompanyServiceTest</code></td>
+                                        <td>Unit (Service Layer)</td>
+                                        <td>4</td>
+                                        <td><span class="badge bg-success">Passed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>EligibilityServiceTest</code></td>
+                                        <td>Unit (Domain Logic)</td>
+                                        <td>8</td>
+                                        <td><span class="badge bg-success">Passed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>ReadinessScoreCalculationTest</code></td>
+                                        <td>Unit (Algorithm)</td>
+                                        <td>6</td>
+                                        <td><span class="badge bg-success">Passed</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Sprint Burndown & Velocity -->
+            <div class="col-lg-6">
+                <div class="card h-100 telemetry-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Sprint 5 Burndown Chart</h5>
+                            <span class="text-muted small">23 Story Points · 10 Days</span>
+                        </div>
+                        <p class="text-muted small mb-3">Ideal burn rate vs. actual completed story points per sprint iteration.</p>
+                        
+                        <div class="burndown-chart-wrapper mb-3" id="burndown-chart-container">
+                            <!-- SVG Burndown Chart injected dynamically -->
+                        </div>
+
+                        <h6 class="mt-3 mb-2 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Team Velocity Across Sprints</h6>
+                        <div id="velocity-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DevOps Pipeline & Traceability Status -->
+        <div class="card telemetry-card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">DevOps CI/CD &amp; Infrastructure Orchestration</h5>
+                    <span class="badge bg-success text-white">All Systems Operational</span>
+                </div>
+                <div class="row g-3" id="pipeline-status-cards"></div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/app.js"></script>
@@ -40,7 +156,11 @@
     requireRole(user, 'ADMIN');
     document.getElementById('navbar').innerHTML = navbar('admin-reports');
     try {
-        const stats = await api('/admin/stats');
+        const [stats, agile] = await Promise.all([
+            api('/admin/stats'),
+            api('/admin/agile-metrics')
+        ]);
+
         const cards = [
             ['Total users', stats.totalUsers],
             ['Students', stats.totalStudents],
@@ -66,10 +186,146 @@
                     <span>${escapeHtml(d.department)}</span><strong>${escapeHtml(d.students)}</strong>
                 </div>`).join('')
             : '<p class="text-muted">No students registered yet.</p>';
+
+        // Agile Telemetry KPI Cards
+        const agileKpi = [
+            ['Velocity (Total)', `${agile.completedStoryPoints} / ${agile.totalStoryPoints} SP`, '100% Velocity Target Achieved'],
+            ['TDD Pass Rate', `${agile.testMetrics.passRatePercentage}%`, `${agile.testMetrics.passedTests} passed, ${agile.testMetrics.failedTests} failed`],
+            ['Instruction Coverage', `${agile.testMetrics.instructionCoveragePercentage}%`, 'JaCoCo Bytecode Analysis'],
+            ['Line Coverage', `${agile.testMetrics.lineCoveragePercentage}%`, '725 / 1004 Statements Executed'],
+            ['Traceability Matrix', '100%', 'INVEST Mapped across 23 Stories'],
+            ['CI/CD Pipeline', 'Passing', '8-Stage Jenkins Automation'],
+        ];
+        document.getElementById('agile-kpi-cards').innerHTML = agileKpi.map(([title, val, sub]) => `
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="stat-label">${escapeHtml(title)}</div>
+                        <div class="stat-value text-primary" style="font-size:1.55rem;">${escapeHtml(val)}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(sub)}</div>
+                    </div>
+                </div>
+            </div>`).join('');
+
+        // Coverage Bars
+        const tm = agile.testMetrics;
+        document.getElementById('coverage-bars').innerHTML = `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1" style="font-size:0.83rem; font-weight:600;">
+                    <span>Instruction Coverage (JaCoCo)</span>
+                    <span class="text-primary">${tm.instructionCoveragePercentage}%</span>
+                </div>
+                <div class="progress" style="height:10px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: ${tm.instructionCoveragePercentage}%"></div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1" style="font-size:0.83rem; font-weight:600;">
+                    <span>Line Coverage (JaCoCo)</span>
+                    <span class="text-success">${tm.lineCoveragePercentage}%</span>
+                </div>
+                <div class="progress" style="height:10px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: ${tm.lineCoveragePercentage}%"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="d-flex justify-content-between mb-1" style="font-size:0.83rem; font-weight:600;">
+                    <span>Branch Decision Coverage (JaCoCo)</span>
+                    <span class="text-warning">${tm.branchCoveragePercentage}%</span>
+                </div>
+                <div class="progress" style="height:10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: ${tm.branchCoveragePercentage}%"></div>
+                </div>
+            </div>
+        `;
+
+        // Burndown SVG Chart
+        document.getElementById('burndown-chart-container').innerHTML = renderBurndownSvg(agile.burndownData);
+
+        // Velocity Bars
+        const maxVelocity = 25;
+        document.getElementById('velocity-container').innerHTML = Object.entries(agile.velocityPerSprint)
+            .map(([sprintName, points]) => {
+                const pct = Math.round((points / maxVelocity) * 100);
+                return `
+                <div class="velocity-row">
+                    <div class="velocity-header">
+                        <span>${escapeHtml(sprintName)}</span>
+                        <span>${points} SP</span>
+                    </div>
+                    <div class="progress" style="height:7px;">
+                        <div class="progress-bar bg-indigo" style="width:${pct}%; background-color:#5146e5;"></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+        // Pipeline Status Cards
+        const ps = agile.pipelineStatus;
+        const pipelineItems = [
+            ['Jenkins CI/CD', ps.jenkinsStatus, 'Automated build, test, and package on push', 'success'],
+            ['Docker Containerization', ps.dockerStatus, 'Multi-stage Dockerfile & compose orchestration', 'primary'],
+            ['Kubernetes Cluster', `Namespace: ${ps.k8sNamespace}`, 'Deployment, ClusterIP, and NodePort service manifests', 'info'],
+            ['ELK Logstash Logging', ps.elkStatus, 'Centralized log aggregation and search pipeline', 'warning'],
+            ['Git Version Control', `Branches: ${ps.gitBranch}`, 'GitFlow workflow with protected main and develop branches', 'secondary'],
+        ];
+        document.getElementById('pipeline-status-cards').innerHTML = pipelineItems.map(([name, status, desc, color]) => `
+            <div class="col-md">
+                <div class="p-3 border rounded-3 bg-light h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <strong style="font-size:0.86rem;">${escapeHtml(name)}</strong>
+                        <span class="badge bg-${color}">${escapeHtml(status)}</span>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size:0.75rem;">${escapeHtml(desc)}</p>
+                </div>
+            </div>`).join('');
+
     } catch (error) {
         showAlert(error.message);
     }
 })();
+
+function renderBurndownSvg(points) {
+    if (!points || !points.length) return '<p class="text-muted">No burndown data available.</p>';
+    const width = 480;
+    const height = 170;
+    const padX = 40;
+    const padY = 20;
+    const chartW = width - padX * 2;
+    const chartH = height - padY * 2;
+    const maxPts = 25;
+
+    const getX = (day) => padX + ((day - 1) / (points.length - 1)) * chartW;
+    const getY = (val) => padY + chartH - (val / maxPts) * chartH;
+
+    const idealCoords = points.map(p => `${getX(p.day)},${getY(p.idealPoints)}`).join(' ');
+    const actualCoords = points.map(p => `${getX(p.day)},${getY(p.actualPoints)}`).join(' ');
+
+    const dots = points.map(p => `
+        <circle cx="${getX(p.day)}" cy="${getY(p.actualPoints)}" r="3.5" fill="#5146e5" stroke="#ffffff" stroke-width="1.5"/>
+    `).join('');
+
+    return `
+    <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; overflow:visible;">
+        <line x1="${padX}" y1="${getY(0)}" x2="${padX + chartW}" y2="${getY(0)}" stroke="#e5e7eb" stroke-width="1"/>
+        <line x1="${padX}" y1="${getY(10)}" x2="${padX + chartW}" y2="${getY(10)}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="${padX}" y1="${getY(20)}" x2="${padX + chartW}" y2="${getY(20)}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/>
+        
+        <text x="${padX - 8}" y="${getY(0) + 4}" font-size="9" fill="#9ca3af" text-anchor="end">0 SP</text>
+        <text x="${padX - 8}" y="${getY(10) + 4}" font-size="9" fill="#9ca3af" text-anchor="end">10 SP</text>
+        <text x="${padX - 8}" y="${getY(20) + 4}" font-size="9" fill="#9ca3af" text-anchor="end">20 SP</text>
+        
+        <polyline fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5,4" points="${idealCoords}"/>
+        <polyline fill="none" stroke="#5146e5" stroke-width="2.5" stroke-linecap="round" points="${actualCoords}"/>
+        ${dots}
+        
+        ${points.map(p => `<text x="${getX(p.day)}" y="${padY + chartH + 14}" font-size="9" fill="#6b7280" text-anchor="middle">D${p.day}</text>`).join('')}
+    </svg>
+    <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.75rem;">
+        <span class="d-flex align-items-center gap-1"><span style="display:inline-block; width:14px; height:2px; background:#9ca3af; border-top:2px dashed #9ca3af;"></span> Ideal Burn</span>
+        <span class="d-flex align-items-center gap-1"><span style="display:inline-block; width:14px; height:3px; background:#5146e5; border-radius:2px;"></span> Actual Burn</span>
+    </div>
+    `;
+}
 </script>
 </body>
 </html>

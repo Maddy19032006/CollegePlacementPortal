@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApplicationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">College Placement Portal</a> &gt; <a href="index.source.html" class="el_package">com.college.placement.service</a> &gt; <span class="el_source">ApplicationService.java</span></div><h1>ApplicationService.java</h1><pre class="source lang-java linenums">package com.college.placement.service;
+
+import com.college.placement.dto.ApplicationResponse;
+import com.college.placement.dto.ApplicationStatusRequest;
+import com.college.placement.dto.EligibilityResponse;
+import com.college.placement.entity.Application;
+import com.college.placement.entity.ApplicationStatus;
+import com.college.placement.entity.Company;
+import com.college.placement.entity.StudentProfile;
+import com.college.placement.exception.AccessDeniedException;
+import com.college.placement.exception.BusinessException;
+import com.college.placement.exception.ResourceNotFoundException;
+import com.college.placement.repository.ApplicationRepository;
+import com.college.placement.repository.CompanyRepository;
+import com.college.placement.repository.StudentProfileRepository;
+import com.college.placement.security.CurrentUser;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Application rules:
+ * 1. A student cannot apply twice to the same company.
+ * 2. A student cannot apply after the deadline.
+ * 3. The student must meet all eligibility criteria.
+ * 4. The student must have saved a profile first (CGPA, department, etc.).
+ */
+@Service
+public class ApplicationService {
+
+    private final ApplicationRepository applicationRepository;
+    private final CompanyRepository companyRepository;
+    private final StudentProfileRepository studentProfileRepository;
+    private final EligibilityService eligibilityService;
+    private final CurrentUser currentUser;
+
+    public ApplicationService(ApplicationRepository applicationRepository,
+                              CompanyRepository companyRepository,
+                              StudentProfileRepository studentProfileRepository,
+                              EligibilityService eligibilityService,
+<span class="fc" id="L44">                              CurrentUser currentUser) {</span>
+<span class="fc" id="L45">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L46">        this.companyRepository = companyRepository;</span>
+<span class="fc" id="L47">        this.studentProfileRepository = studentProfileRepository;</span>
+<span class="fc" id="L48">        this.eligibilityService = eligibilityService;</span>
+<span class="fc" id="L49">        this.currentUser = currentUser;</span>
+<span class="fc" id="L50">    }</span>
+
+    /** Applications of the logged-in student. */
+    public List&lt;ApplicationResponse&gt; getMyApplications() {
+<span class="fc" id="L54">        Long userId = currentUser.get().getId();</span>
+<span class="fc" id="L55">        return applicationRepository.findByStudentUserIdOrderByAppliedAtDesc(userId).stream()</span>
+<span class="fc" id="L56">                .map(ApplicationResponse::from)</span>
+<span class="fc" id="L57">                .toList();</span>
+    }
+
+    /** All applications (officer/admin view), optionally filtered by status. */
+    public List&lt;ApplicationResponse&gt; getAll(ApplicationStatus status) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        List&lt;Application&gt; applications = (status == null)</span>
+<span class="nc" id="L63">                ? applicationRepository.findAllByOrderByAppliedAtDesc()</span>
+<span class="nc" id="L64">                : applicationRepository.findByStatusOrderByAppliedAtDesc(status);</span>
+<span class="nc" id="L65">        return applications.stream().map(ApplicationResponse::from).toList();</span>
+    }
+
+    /** Applies to a company after running every business rule. */
+    @Transactional
+    public ApplicationResponse apply(Long companyId) {
+<span class="fc" id="L71">        StudentProfile student = studentProfileRepository.findByUserId(currentUser.get().getId())</span>
+<span class="pc" id="L72">                .orElseThrow(() -&gt; new BusinessException(&quot;Save your profile before applying to companies&quot;));</span>
+
+<span class="fc" id="L74">        Company company = companyRepository.findById(companyId)</span>
+<span class="pc" id="L75">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Company not found with id &quot; + companyId));</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (applicationRepository.existsByStudentUserIdAndCompanyId(student.getUser().getId(), companyId)) {</span>
+<span class="fc" id="L78">            throw new BusinessException(&quot;You have already applied to this company&quot;);</span>
+        }
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (company.getApplicationDeadline().isBefore(LocalDate.now())) {</span>
+<span class="fc" id="L81">            throw new BusinessException(&quot;The application deadline for &quot; + company.getName() + &quot; has passed&quot;);</span>
+        }
+
+<span class="fc" id="L84">        EligibilityResponse eligibility = eligibilityService.check(student, company);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (!eligibility.eligible()) {</span>
+<span class="fc" id="L86">            throw new BusinessException(&quot;Student is not eligible for this company: &quot;</span>
+<span class="fc" id="L87">                    + String.join(&quot;; &quot;, eligibility.failedCriteria()));</span>
+        }
+
+<span class="fc" id="L90">        Application application = new Application();</span>
+<span class="fc" id="L91">        application.setStudent(student);</span>
+<span class="fc" id="L92">        application.setCompany(company);</span>
+<span class="fc" id="L93">        application.setStatus(ApplicationStatus.APPLIED);</span>
+<span class="fc" id="L94">        return ApplicationResponse.from(applicationRepository.save(application));</span>
+    }
+
+    /** A student may cancel while the application is still APPLIED. */
+    @Transactional
+    public void cancel(Long applicationId) {
+<span class="nc" id="L100">        Application application = findEntity(applicationId);</span>
+<span class="nc" id="L101">        Long myUserId = currentUser.get().getId();</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (!application.getStudent().getUser().getId().equals(myUserId)) {</span>
+<span class="nc" id="L103">            throw new AccessDeniedException(&quot;You can only cancel your own applications&quot;);</span>
+        }
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (application.getStatus() != ApplicationStatus.APPLIED) {</span>
+<span class="nc" id="L106">            throw new BusinessException(&quot;Only applications in APPLIED status can be cancelled&quot;);</span>
+        }
+<span class="nc" id="L108">        applicationRepository.delete(application);</span>
+<span class="nc" id="L109">    }</span>
+
+    /** Officer changes the status; transitions are validated against the flow. */
+    @Transactional
+    public ApplicationResponse updateStatus(Long applicationId, ApplicationStatusRequest request) {
+<span class="fc" id="L114">        Application application = findEntity(applicationId);</span>
+<span class="fc" id="L115">        ApplicationStatus current = application.getStatus();</span>
+<span class="fc" id="L116">        ApplicationStatus target = request.status();</span>
+
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (!current.canTransitionTo(target)) {</span>
+<span class="fc" id="L119">            throw new BusinessException(&quot;Invalid status transition: &quot; + current + &quot; to &quot; + target</span>
+<span class="fc" id="L120">                    + &quot;. Allowed: &quot; + ApplicationStatus.APPLIED.canTransitionTo(target));</span>
+        }
+<span class="fc" id="L122">        application.setStatus(target);</span>
+<span class="fc" id="L123">        application.setLastUpdatedAt(LocalDateTime.now());</span>
+<span class="fc" id="L124">        return ApplicationResponse.from(applicationRepository.save(application));</span>
+    }
+
+    /** Applications for one company (used by the officer view). */
+    public List&lt;ApplicationResponse&gt; getByCompany(Long companyId) {
+<span class="nc" id="L129">        return applicationRepository.findAllByOrderByAppliedAtDesc().stream()</span>
+<span class="nc" id="L130">                .filter(application -&gt; application.getCompany().getId().equals(companyId))</span>
+<span class="nc" id="L131">                .map(ApplicationResponse::from)</span>
+<span class="nc" id="L132">                .toList();</span>
+    }
+
+    private Application findEntity(Long id) {
+<span class="fc" id="L136">        return applicationRepository.findById(id)</span>
+<span class="pc" id="L137">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Application not found with id &quot; + id));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
