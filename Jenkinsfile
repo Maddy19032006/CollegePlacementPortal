@@ -2,22 +2,17 @@ pipeline {
     agent any
 
     tools {
-        // Jenkins > Manage Jenkins > Tools: add a JDK named 'jdk21' and Maven named 'maven3'
-        jdk 'jdk21'
-        maven 'maven3'
+        // Uses the configured Maven 'M3' tool in Jenkins
+        maven 'M3'
     }
 
     environment {
         // ── Docker Hub ──────────────────────────────────────────────────────────
-        // In Jenkins: Manage Jenkins > Credentials > Global > Add:
-        //   Kind: Username with password, ID: docker-hub-creds
-        //   Username: your Docker Hub username   Password: your Docker Hub password/PAT
-        DOCKER_HUB_CREDS = credentials('docker-hub-creds')
-        // Change 'maddy19032006' below to your actual Docker Hub username
+        // Uses existing 'docker-hub-credentials' in Jenkins
+        DOCKER_HUB_CREDS = credentials('docker-hub-credentials')
         IMAGE_NAME = "theatomicxm/placement-portal"
 
         // ── GitHub ───────────────────────────────────────────────────────────────
-        // Jenkins polls this repo (or receives a webhook) to trigger the pipeline.
         // Repo: https://github.com/Maddy19032006/CollegePlacementPortal
     }
 
@@ -32,7 +27,6 @@ pipeline {
         // ── Stage 1 ─────────────────────────────────────────────────────────────
         stage('Checkout from GitHub') {
             steps {
-                // Jenkins SCM integration: pulls latest code from GitHub automatically
                 checkout scm
                 echo "Checked out branch: ${env.GIT_BRANCH} @ ${env.GIT_COMMIT}"
             }
@@ -52,7 +46,6 @@ pipeline {
             }
             post {
                 always {
-                    // Publish Surefire test results in Jenkins UI
                     junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
                     echo 'Test results published. Check the Test Results trend in the job sidebar.'
                 }
@@ -75,7 +68,6 @@ pipeline {
         // ── Stage 5 ─────────────────────────────────────────────────────────────
         stage('Docker Build Image') {
             steps {
-                // Uses the multi-stage Dockerfile at the repo root
                 bat "docker build -t %IMAGE_NAME%:latest -t %IMAGE_NAME%:%BUILD_NUMBER% ."
                 echo "Docker image built: ${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
             }
@@ -84,7 +76,6 @@ pipeline {
         // ── Stage 6 ─────────────────────────────────────────────────────────────
         stage('Docker Push to Hub') {
             steps {
-                // Login with the Jenkins credential and push both tags
                 bat "docker login -u %DOCKER_HUB_CREDS_USR% -p %DOCKER_HUB_CREDS_PSW%"
                 bat "docker push %IMAGE_NAME%:latest"
                 bat "docker push %IMAGE_NAME%:%BUILD_NUMBER%"
@@ -95,8 +86,6 @@ pipeline {
         // ── Stage 7 ─────────────────────────────────────────────────────────────
         stage('Deploy with Docker Compose') {
             steps {
-                // Pulls the freshly pushed image and recreates running containers.
-                // APP_IMAGE overrides the image used by the 'app' service in docker-compose.yml
                 bat "set APP_IMAGE=%IMAGE_NAME%:%BUILD_NUMBER% && docker compose -f docker-compose.yml up -d --pull always --no-build"
                 echo 'Containers restarted with new image.'
             }
@@ -105,7 +94,6 @@ pipeline {
         // ── Stage 8 ─────────────────────────────────────────────────────────────
         stage('Smoke Test') {
             steps {
-                // Poll http://localhost:8081/login.html up to 90 seconds for HTTP 200
                 bat '''
                     echo Waiting for application to become healthy...
                     for /L %%i in (1,1,30) do (
@@ -132,7 +120,6 @@ pipeline {
             echo "=== PIPELINE FAILED === Check the stage that failed above for details."
         }
         always {
-            // Remove dangling/intermediate Docker images to keep the Jenkins agent clean
             bat 'docker image prune -f'
             cleanWs()
         }
