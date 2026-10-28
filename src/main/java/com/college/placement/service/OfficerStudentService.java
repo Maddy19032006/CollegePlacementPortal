@@ -9,6 +9,7 @@ import com.college.placement.repository.CompanyRepository;
 import com.college.placement.repository.StudentProfileRepository;
 import com.college.placement.repository.StudentSkillRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import java.util.List;
  * Officer view of students and their eligibility for a company.
  */
 @Service
+@Transactional(readOnly = true)
 public class OfficerStudentService {
 
     private final StudentProfileRepository studentProfileRepository;

@@ -3,6 +3,7 @@ package com.college.placement.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.college.placement.dto.ApplicationResponse;
 import com.college.placement.dto.OfficerDashboardResponse;
@@ -17,6 +18,7 @@ import com.college.placement.repository.UserRepository;
  * Aggregated numbers for the placement officer dashboard.
  */
 @Service
+@Transactional(readOnly = true)
 public class OfficerDashboardService {
 
     private final UserRepository userRepository;

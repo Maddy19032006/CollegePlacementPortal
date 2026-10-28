@@ -141,4 +141,14 @@ class StudentJourneyIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[0].message").value("CGPA must be between 0 and 10"));
     }
+
+    @Test
+    void officerCanListAllStudents() throws Exception {
+        userRepository.save(new User("officertest", "officertest@college.edu",
+                passwordEncoder.encode("Strong@Pass1"), "Officer Test", Role.PLACEMENT_OFFICER));
+
+        mockMvc.perform(get("/api/officer/students").with(user("officertest").roles("PLACEMENT_OFFICER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
 }

@@ -23,7 +23,7 @@ public class StudentProfile {
     private Long id;
 
     /** Owning side of the one-to-one relation with the login account. */
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
